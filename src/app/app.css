@@ -1,0 +1,29 @@
+ :host {
+	display: block;
+	min-height: 100vh;
+}
+
+.app-shell {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+.app-main {
+	padding: var(--spacing-xl);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xl);
+}
+
+@media (max-width: 900px) {
+	.app-main {
+		padding: var(--spacing-lg);
+	}
+}
+
+@media (max-width: 600px) {
+	.app-main {
+		padding: var(--spacing-md);
+	}
+}

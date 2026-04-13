@@ -1,0 +1,73 @@
+<header class="navbar">
+  <div class="navbar-left">
+    <a class="navbar-brand" routerLink="/dashboard">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <span class="brand-name">{{ restaurantName() }}</span>
+    </a>
+    <nav class="navbar-links" aria-label="Primary">
+      <a
+        class="nav-link"
+        routerLink="/dashboard"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        Dashboard
+      </a>
+      <a
+        class="nav-link"
+        routerLink="/orders"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      >
+        Orders
+      </a>
+      <a
+        class="nav-link"
+        routerLink="/menu"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      >
+        Menu
+      </a>
+      <a
+        class="nav-link"
+        routerLink="/categories"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      >
+        Categories
+      </a>
+      <a
+        class="nav-link"
+        routerLink="/profile"
+        routerLinkActive="is-active"
+        ariaCurrentWhenActive="page"
+      >
+        Restaurant Profile
+      </a>
+    </nav>
+  </div>
+
+  <div class="navbar-right">
+    <button
+      type="button"
+      class="status-toggle"
+      role="switch"
+      [attr.aria-checked]="isOpen()"
+      (click)="toggleOpenStatus()"
+    >
+      <span class="toggle-label">{{ statusLabel() }}</span>
+      <span class="toggle-track" aria-hidden="true">
+        <span class="toggle-knob"></span>
+      </span>
+    </button>
+    <div class="owner-info">
+      <span class="owner-label">Owner</span>
+      <span class="owner-name">{{ ownerName() }}</span>
+    </div>
+    <button type="button" class="logout-button" (click)="logout()">
+      Logout
+    </button>
+  </div>
+</header>
