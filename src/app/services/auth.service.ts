@@ -11,7 +11,7 @@ export class AuthService {
   // Login method
   login(email: string, password: string): boolean {
     // Dummy check — replace with real authentication logic
-    if (email === 'admin@example.com' && password === '1234@') {
+    if (email === 'admin@example.com' && password === '1234') {
       this._isLoggedIn = true;
       return true;
     }

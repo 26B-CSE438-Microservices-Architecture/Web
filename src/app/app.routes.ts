@@ -26,7 +26,7 @@ export const routes: Routes = [
   {
     path: 'menu',
     loadComponent: () =>
-      import('./pages/simple-page.component').then(m => m.SimplePageComponent),
+      import('./pages/menu/menu-page.component').then(m => m.MenuPageComponent),
     canActivate: [AuthGuard],   // <-- protected
     data: { title: 'Menu', subtitle: 'Maintain menu items and pricing.' }
   },
