@@ -1,35 +1,52 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css'],
   standalone: true,
-  imports: [FormsModule]
+  imports: [FormsModule, RouterLink],
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
+
   email: string = '';
   password: string = '';
   showPassword: boolean = false;
+  rememberMe: boolean = false;
 
-  constructor(private router: Router, private auth: AuthService) {}
+  constructor(private router: Router, private auth: AuthService) {
+
+  if (typeof window !== 'undefined') {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+
+    if (savedEmail) {
+      this.email = savedEmail;
+      this.rememberMe = true;
+    }
+  }
+}
 
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
 
-  login() {
-    if (this.auth.login(this.email, this.password)) {
-      this.router.navigate(['/dashboard']); // Navigate on success
-    } else {
-      alert('Invalid email or password');
-    }
-  }
+ login() {
+  if (this.auth.login(this.email, this.password)) {
 
-  forgotPassword() {
-    alert('Password recovery not implemented yet 😅');
+    if (typeof window !== 'undefined') {
+      if (this.rememberMe) {
+        localStorage.setItem('rememberedEmail', this.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+    }
+
+    this.router.navigate(['/dashboard']);
+  } else {
+    alert('Invalid email or password');
   }
+}
 }

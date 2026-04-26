@@ -7,6 +7,12 @@ export const routes: Routes = [
       import('./pages/login/login.component').then(m => m.LoginComponent)
   },
   {
+  path: 'forgot-password',
+  loadComponent: () =>
+    import('./pages/forgot-password/forgot-password.component')
+      .then(m => m.ForgotPasswordComponent)
+},
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'login'
@@ -37,6 +43,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],   // <-- protected
     data: { title: 'Restaurant Profile', subtitle: 'Update details, hours, and availability.' }
   },
+  
   {
     path: '**',
     loadComponent: () =>

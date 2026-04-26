@@ -2,6 +2,7 @@
   <h1>Restaurant Admin Login</h1>
 
   <form (ngSubmit)="login()">
+
     <!-- Email -->
     <div class="form-group">
       <label for="email">Email</label>
@@ -18,25 +19,39 @@
     <!-- Password -->
     <div class="form-group password-group">
       <label for="password">Password</label>
-      <input
-        [type]="showPassword ? 'text' : 'password'"
-        id="password"
-        [(ngModel)]="password"
-        name="password"
-        placeholder="Enter your password"
-        required
-      />
-      <span class="eye-icon" (click)="togglePassword()">
-        {{ showPassword ? '🙈' : '👁️' }}
-      </span>
+
+      <div class="password-wrapper">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          id="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="Enter your password"
+          required
+        />
+
+        <!-- Eye icon inside input -->
+        <span class="eye-icon" (click)="togglePassword()">
+          {{ showPassword ? '◐' : '◎' }}
+        </span>
+      </div>
+
+      <!-- Forgot password (right side) -->
+      <div class="forgot-password">
+        <a routerLink="/forgot-password">Forgot password?</a>
+      </div>
     </div>
 
-    <!-- Forgot Password -->
-    <div class="forgot-password">
-      <a href="#" (click)="forgotPassword()">Forgot password?</a>
+    <!-- Remember Me -->
+    <div class="remember-me">
+      <label>
+        <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+        Remember me
+      </label>
     </div>
 
     <!-- Submit -->
     <button type="submit">Login</button>
+
   </form>
 </div>

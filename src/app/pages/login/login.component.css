@@ -15,7 +15,6 @@
 }
 
 .form-group {
-  position: relative;
   margin-bottom: 16px;
 }
 
@@ -35,22 +34,37 @@
   box-sizing: border-box;
 }
 
-.password-group .eye-icon {
-  position: absolute;
-  right: 10px;
-  top: 36px;
-  cursor: pointer;
-  user-select: none;
+/* Password wrapper */
+.password-wrapper {
+  position: relative;
 }
 
+.password-wrapper input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #64748b;
+}
+
+/* Forgot password right aligned */
 .forgot-password {
-  text-align: right;
-  margin-bottom: 24px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
 }
 
 .forgot-password a {
-  color: #E65100;
   font-size: 13px;
+  color: #E65100;
   text-decoration: none;
 }
 
@@ -58,6 +72,14 @@
   text-decoration: underline;
 }
 
+/* Remember me */
+.remember-me {
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Button */
 button[type='submit'] {
   width: 100%;
   padding: 12px;
@@ -67,7 +89,6 @@ button[type='submit'] {
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
 button[type='submit']:hover {
