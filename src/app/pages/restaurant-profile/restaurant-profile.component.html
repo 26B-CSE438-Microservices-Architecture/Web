@@ -1,0 +1,59 @@
+<div class="profile-container">
+
+  <h1 class="title">Restaurant Profile</h1>
+  <p class="subtitle">Manage your restaurant information</p>
+
+  <!-- SUCCESS MESSAGE -->
+  <p class="success" *ngIf="successMessage">
+    {{ successMessage }}
+  </p>
+
+  <div class="profile-card">
+
+    <div class="grid">
+
+      <div class="field">
+        <label>Name</label>
+        <input [(ngModel)]="restaurant.name" />
+      </div>
+
+      <div class="field">
+        <label>Description</label>
+        <input [(ngModel)]="restaurant.description" />
+      </div>
+
+      <div class="field">
+        <label>Address</label>
+        <input [(ngModel)]="restaurant.address" />
+      </div>
+
+      <div class="field">
+        <label>Phone</label>
+        <input [(ngModel)]="restaurant.phone" />
+      </div>
+
+      <div class="field">
+        <label>Opening Time</label>
+        <input [(ngModel)]="restaurant.openingTime" />
+      </div>
+
+      <div class="field">
+        <label>Closing Time</label>
+        <input [(ngModel)]="restaurant.closingTime" />
+      </div>
+
+      <div class="field full">
+        <label>Status</label>
+        <select [(ngModel)]="restaurant.status">
+          <option>Open</option>
+          <option>Closed</option>
+          <option>Busy</option>
+        </select>
+      </div>
+
+    </div>
+
+    <button (click)="save()">Save Changes</button>
+
+  </div>
+</div>
