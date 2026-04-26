@@ -1,0 +1,358 @@
+<section class="page-surface orders-page">
+  <div class="page-header">
+    <div class="page-header-main">
+      <h1 class="page-title">Orders Management</h1>
+      <p class="page-subtitle">
+        View, confirm, and manage restaurant orders in real-time.
+      </p>
+    </div>
+    <div class="page-header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="loadOrders()"
+        [disabled]="loading()">
+        {{ loading() ? 'Refreshing...' : 'Refresh Orders' }}
+      </button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="banner banner-error" role="alert">
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="btn-close" (click)="clearBanner()">Dismiss</button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="banner banner-success" role="status">
+      <span>{{ successMessage() }}</span>
+      <button type="button" class="btn-close" (click)="clearBanner()">Dismiss</button>
+    </div>
+  }
+
+  <div class="toolbar-card">
+    <p class="context-label">Filter by Status</p>
+    <div class="filter-buttons">
+      <button
+        type="button"
+        class="filter-btn"
+        [class.filter-btn-active]="selectedStatusFilter() === null"
+        (click)="filterByStatus(null)">
+        All Orders ({{ totalElements() }})
+      </button>
+      @for (status of availableStatuses; track status) {
+        <button
+          type="button"
+          class="filter-btn"
+          [class.filter-btn-active]="selectedStatusFilter() === status"
+          (click)="filterByStatus(status)">
+          {{ getStatusLabel(status) }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (loading() && orders().length === 0) {
+    <div class="empty-note">Loading orders...</div>
+  } @else if (!loading() && orders().length === 0) {
+    <div class="empty-note">
+      @if (selectedStatusFilter()) {
+        No orders found with status "{{ getStatusLabel(selectedStatusFilter()!) }}". Try a different filter.
+      } @else {
+        No orders found yet. Orders will appear here once customers place them.
+      }
+    </div>
+  } @else {
+    <div class="orders-list">
+      @for (order of filteredOrders(); track order.orderId) {
+        <article class="order-card">
+          <header class="order-header">
+            <div class="order-info">
+              <h3 class="order-id">Order #{{ order.orderId }}</h3>
+              <p class="order-meta">
+                <span class="meta-item">
+                  <strong>Created:</strong> {{ formatDate(order.createdAt) }}
+                </span>
+                <span class="meta-item">
+                  <strong>Type:</strong> {{ order.orderType }}
+                </span>
+              </p>
+            </div>
+            <div class="order-status-and-actions">
+              <div class="status-container">
+                <span [ngClass]="getStatusBadgeClass(order.status)">
+                  {{ getStatusLabel(order.status) }}
+                </span>
+              </div>
+              <div class="action-row">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  (click)="showOrderDetails(order.orderId)">
+                  {{ showingDetails() === order.orderId ? 'Hide Details' : 'View Details' }}
+                </button>
+                @if (!editingOrderId() || editingOrderId() !== order.orderId) {
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    (click)="startEditOrder(order.orderId)"
+                    [disabled]="submitting()">
+                    Edit Order
+                  </button>
+                }
+              </div>
+            </div>
+          </header>
+
+          <!-- Order Summary -->
+          <div class="order-summary">
+            <div class="summary-item">
+              <span class="summary-label">Total Amount</span>
+              <span class="summary-value">{{ order.totalAmount.amount | currency: order.totalAmount.currency }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Payment</span>
+              <span class="payment-badge" [class]="'payment-' + order.paymentStatus.toLowerCase()">
+                {{ order.paymentStatus }}
+              </span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Items</span>
+              <span class="summary-value">{{ order.items.length }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">ETA</span>
+              <span class="summary-value">{{ formatTime(order.estimatedDeliveryTime) }}</span>
+            </div>
+          </div>
+
+          <!-- Order Details (Expandable) -->
+          @if (showingDetails() === order.orderId) {
+            <div class="order-details">
+              <!-- Items Section -->
+              <div class="details-section">
+                <h4 class="section-title">Order Items</h4>
+                <div class="table-wrapper" role="region" aria-live="polite">
+                  <table class="items-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Product</th>
+                        <th scope="col">Qty</th>
+                        <th scope="col">Unit Price</th>
+                        <th scope="col">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of order.items; track item.id) {
+                        <tr>
+                          <td>
+                            <div class="item-name">{{ item.productName }}</div>
+                            @if (item.specialInstructions) {
+                              <div class="item-instructions">{{ item.specialInstructions }}</div>
+                            }
+                          </td>
+                          <td>{{ item.quantity }}</td>
+                          <td>{{ item.unitPrice.amount | currency: item.unitPrice.currency }}</td>
+                          <td>{{ item.subtotal.amount | currency: item.subtotal.currency }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Delivery Info Section -->
+              @if (order.orderType === 'DELIVERY' && order.deliveryAddress.street) {
+                <div class="details-section">
+                  <h4 class="section-title">Delivery Address</h4>
+                  <div class="address-block">
+                    <p>{{ order.deliveryAddress.street }}</p>
+                    <p>{{ order.deliveryAddress.city }}, {{ order.deliveryAddress.zipCode }}</p>
+                    <p>{{ order.deliveryAddress.country }}</p>
+                  </div>
+                  @if (order.deliveryFee.amount > 0) {
+                    <p class="delivery-fee">
+                      <strong>Delivery Fee:</strong> {{ order.deliveryFee.amount | currency: order.deliveryFee.currency }}
+                    </p>
+                  }
+                </div>
+              }
+
+              <!-- Notes Section -->
+              @if (order.notes) {
+                <div class="details-section">
+                  <h4 class="section-title">Special Instructions</h4>
+                  <p class="notes-text">{{ order.notes }}</p>
+                </div>
+              }
+
+              <!-- Status History Section -->
+              <div class="details-section">
+                <h4 class="section-title">Status Timeline</h4>
+                <div class="timeline">
+                  @for (history of order.statusHistory; track history.id; let isLast = $last) {
+                    <div class="timeline-item" [class.timeline-item-last]="isLast">
+                      <div class="timeline-marker"></div>
+                      <div class="timeline-content">
+                        <div class="timeline-status">
+                          <span class="status-label">{{ getStatusLabel(history.status) }}</span>
+                          <span class="timeline-time">{{ formatTime(history.changedAt) }}</span>
+                        </div>
+                        <div class="timeline-meta">
+                          <span class="meta-by">Changed by: {{ history.changedBy }}</span>
+                          @if (history.reason) {
+                            <span class="meta-reason">Reason: {{ history.reason }}</span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Edit Order Actions (Inline) -->
+          @if (editingOrderId() === order.orderId) {
+            <div class="edit-section">
+              <div class="edit-actions">
+                <!-- Status Update Form -->
+                @if (!showingStatusForm() || showingStatusForm() !== order.orderId) {
+                  <div class="action-group">
+                    <button
+                      type="button"
+                      class="btn btn-info"
+                      (click)="startChangeStatus(order.orderId)"
+                      [disabled]="submitting()">
+                      Change Status
+                    </button>
+                  </div>
+                }
+
+                <!-- Confirm Button (only for PAYMENT_HELD status) -->
+                @if (order.status === 'PAYMENT_HELD') {
+                  <div class="action-group">
+                    <button
+                      type="button"
+                      class="btn btn-success"
+                      (click)="confirmOrder(order.orderId)"
+                      [disabled]="submitting()">
+                      Confirm Order
+                    </button>
+                  </div>
+                }
+
+                <!-- Reject Button (only for PAYMENT_HELD and CONFIRMED statuses) -->
+                @if (order.status === 'PAYMENT_HELD' || order.status === 'CONFIRMED_BY_RESTAURANT') {
+                  <div class="action-group">
+                    @if (!showingRejectForm() || showingRejectForm() !== order.orderId) {
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        (click)="startRejectOrder(order.orderId)"
+                        [disabled]="submitting()">
+                        Reject Order
+                      </button>
+                    }
+                  </div>
+                }
+
+                <div class="action-group">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="cancelEdit()"
+                    [disabled]="submitting()">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <!-- Status Update Form -->
+              @if (showingStatusForm() === order.orderId) {
+                <form class="form-inline" [formGroup]="statusForm" (ngSubmit)="updateOrderStatus(order.orderId)">
+                  <label class="field-group narrow">
+                    <span class="field-label">New Status</span>
+                    <select class="field-input" formControlName="status">
+                      @for (status of availableStatuses; track status) {
+                        <option [value]="status">{{ getStatusLabel(status) }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field-group">
+                    <span class="field-label">Notes (Optional)</span>
+                    <input
+                      type="text"
+                      class="field-input"
+                      formControlName="notes"
+                      placeholder="Reason or special notes..." />
+                  </label>
+                  <div class="action-row">
+                    <button type="submit" class="btn btn-primary" [disabled]="statusForm.invalid || submitting()">
+                      Update Status
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      (click)="showingStatusForm.set(null)"
+                      [disabled]="submitting()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              }
+
+              <!-- Reject Form -->
+              @if (showingRejectForm() === order.orderId) {
+                <form class="form-inline" [formGroup]="rejectForm" (ngSubmit)="rejectOrder(order.orderId)">
+                  <label class="field-group">
+                    <span class="field-label">Rejection Reason</span>
+                    <input
+                      type="text"
+                      class="field-input"
+                      formControlName="reason"
+                      placeholder="Please provide a reason for rejection..." />
+                  </label>
+                  <div class="action-row">
+                    <button type="submit" class="btn btn-danger" [disabled]="rejectForm.invalid || submitting()">
+                      Confirm Rejection
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      (click)="showingRejectForm.set(null)"
+                      [disabled]="submitting()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="previousPage()"
+        [disabled]="currentPage() === 0">
+        Previous
+      </button>
+      <span class="pagination-info">
+        Page {{ currentPage() + 1 }} of {{ totalPages() }} ({{ orders().length }} / {{ totalElements() }} orders)
+      </span>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="nextPage()"
+        [disabled]="!totalPages() || currentPage() >= totalPages() - 1">
+        Next
+      </button>
+    </div>
+  }
+</section>

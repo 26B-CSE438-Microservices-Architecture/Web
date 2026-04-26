@@ -19,7 +19,7 @@ export const routes: Routes = [
   {
     path: 'orders',
     loadComponent: () =>
-      import('./pages/simple-page.component').then(m => m.SimplePageComponent),
+      import('./pages/orders/orders-page.component').then(m => m.OrdersPageComponent),
     canActivate: [AuthGuard],   // <-- protected
     data: { title: 'Orders', subtitle: 'Track and manage incoming orders.' }
   },
