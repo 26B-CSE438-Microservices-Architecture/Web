@@ -19,7 +19,7 @@ export const routes: Routes = [
   {
     path: 'orders',
     loadComponent: () =>
-      import('./pages/orders/orders-page.component').then(m => m.OrdersPageComponent),
+      import('./pages/simple-page.component').then(m => m.SimplePageComponent),
     canActivate: [AuthGuard],   // <-- protected
     data: { title: 'Orders', subtitle: 'Track and manage incoming orders.' }
   },
@@ -29,13 +29,6 @@ export const routes: Routes = [
       import('./pages/menu/menu-page.component').then(m => m.MenuPageComponent),
     canActivate: [AuthGuard],   // <-- protected
     data: { title: 'Menu', subtitle: 'Maintain menu items and pricing.' }
-  },
-  {
-    path: 'categories',
-    loadComponent: () =>
-      import('./pages/simple-page.component').then(m => m.SimplePageComponent),
-    canActivate: [AuthGuard],   // <-- protected
-    data: { title: 'Categories', subtitle: 'Organize menu categories for quick filtering.' }
   },
   {
     path: 'profile',
