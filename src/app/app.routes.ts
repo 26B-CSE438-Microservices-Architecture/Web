@@ -39,7 +39,9 @@ export const routes: Routes = [
   {
     path: 'profile',
     loadComponent: () =>
-      import('./pages/simple-page.component').then(m => m.SimplePageComponent),
+      import('./pages/restaurant-profile/restaurant-profile.component').then(
+        m => m.RestaurantProfileComponent
+      ),
     canActivate: [AuthGuard],   // <-- protected
     data: { title: 'Restaurant Profile', subtitle: 'Update details, hours, and availability.' }
   },
