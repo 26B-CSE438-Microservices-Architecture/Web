@@ -1,80 +1,169 @@
-<section class="page-surface">
-  <div class="page-header">
-    <h1 class="page-title">Dashboard</h1>
-    <p class="page-subtitle">Track today's performance and active orders.</p>
+<section class="dashboard-shell">
+  <div class="dashboard-hero">
+    <div>
+      <h1 class="hero-title">Operations Dashboard</h1>
+      <p class="hero-subtitle">
+        Real-time pulse of orders, revenue, and menu performance.
+      </p>
+    </div>
+    <div class="hero-meta">
+      <span class="hero-date">{{ today() }}</span>
+      <span class="hero-badge">Mock Data</span>
+    </div>
   </div>
 
-  <div class="stats-grid">
-    <article class="stat-card">
-      <div class="stat-label">Daily Orders</div>
-      <div class="stat-value">{{ summary().dailyOrders }}</div>
-      <div class="stat-meta">Orders placed today</div>
+  <div class="kpi-grid">
+    <article class="kpi-card">
+      <p class="kpi-label">Daily Orders</p>
+      <h2 class="kpi-value">{{ summary().dailyOrders }}</h2>
+      <p class="kpi-footnote">Orders received today</p>
     </article>
-    <article class="stat-card">
-      <div class="stat-label">Active Orders</div>
-      <div class="stat-value">{{ summary().activeOrders }}</div>
-      <div class="stat-meta">Currently in progress</div>
+
+    <article class="kpi-card">
+      <p class="kpi-label">Current Active Orders</p>
+      <h2 class="kpi-value">{{ summary().activeOrders }}</h2>
+      <p class="kpi-footnote">Tickets currently in kitchen flow</p>
     </article>
-    <article class="stat-card">
-      <div class="stat-label">Daily Revenue</div>
-      <div class="stat-value">
-        {{ summary().dailyRevenue | currency: 'USD':'symbol':'1.0-0' }}
-      </div>
-      <div class="stat-meta">Gross revenue today</div>
+
+    <article class="kpi-card">
+      <p class="kpi-label">Daily Revenue</p>
+      <h2 class="kpi-value">{{ summary().dailyRevenue | currency: 'USD':'symbol':'1.0-0' }}</h2>
+      <p class="kpi-footnote">Gross sales so far</p>
+    </article>
+
+    <article class="kpi-card">
+      <p class="kpi-label">Menu Items</p>
+      <h2 class="kpi-value">{{ menuItemsCount() }}</h2>
+      <p class="kpi-footnote">Total products currently listed</p>
     </article>
   </div>
 
-  <div class="table-section">
-    <div class="table-header">
-      <div>
-        <h2 class="table-title">Recent Orders</h2>
-        <p class="table-subtitle">Last active orders in the kitchen queue.</p>
-      </div>
-      <span class="table-pill">Live</span>
+  <div class="dashboard-grid">
+    <div class="left-column">
+      <article class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Top 3 Best Seller Items</h2>
+          <span class="panel-chip">Today</span>
+        </div>
+
+        <ul class="seller-list">
+          @for (item of topSellers(); track item.id) {
+            <li class="seller-item">
+              <div class="seller-rank">{{ $index + 1 }}</div>
+              <div class="seller-info">
+                <p class="seller-name">{{ item.name }}</p>
+                <p class="seller-meta">
+                  {{ item.soldUnits }} sold • {{ item.revenue | currency: 'USD':'symbol':'1.0-0' }} revenue
+                </p>
+              </div>
+              <div class="seller-stock">{{ stockLabel(item.stockLeft) }}</div>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Recent Orders</h2>
+          <span class="panel-chip panel-chip-live">Live</span>
+        </div>
+
+        <div class="table-wrapper" role="region" aria-live="polite">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th scope="col">Order ID</th>
+                <th scope="col">Type</th>
+                <th scope="col">Total</th>
+                <th scope="col">Status</th>
+                <th scope="col">Order Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (hasOrders()) {
+                @for (order of recentOrders(); track order.orderId) {
+                  <tr>
+                    <td class="mono">#{{ order.orderId }}</td>
+                    <td>{{ order.orderTypeLabel }}</td>
+                    <td>{{ order.totalPrice | currency: 'USD':'symbol':'1.2-2' }}</td>
+                    <td>
+                      <span
+                        class="status-badge"
+                        [class.status-pending]="order.status === 'PENDING'"
+                        [class.status-preparing]="order.status === 'PREPARING'"
+                        [class.status-ready]="order.status === 'READY'"
+                        [class.status-cancelled]="order.status === 'CANCELLED'"
+                        [class.status-completed]="order.status === 'COMPLETED'"
+                      >
+                        {{ statusLabel(order.status) }}
+                      </span>
+                    </td>
+                    <td>{{ order.orderTime | date: 'shortTime' }}</td>
+                  </tr>
+                }
+              } @else {
+                <tr>
+                  <td colspan="5" class="empty-state">
+                    No active orders yet. New orders will appear here.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </article>
     </div>
 
-    <div class="table-wrapper" role="region" aria-live="polite">
-      <table class="orders-table">
-        <thead>
-          <tr>
-            <th scope="col">Order ID</th>
-            <th scope="col">Customer</th>
-            <th scope="col">Total</th>
-            <th scope="col">Status</th>
-            <th scope="col">Order Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (hasOrders()) {
-            @for (order of recentOrders(); track order.orderId) {
-              <tr>
-                <td class="mono">#{{ order.orderId }}</td>
-                <td>{{ order.customerName }}</td>
-                <td>{{ order.totalPrice | currency: 'USD':'symbol':'1.2-2' }}</td>
-                <td>
-                  <span
-                    class="status-badge"
-                    [class.status-pending]="order.status === 'PENDING'"
-                    [class.status-preparing]="order.status === 'PREPARING'"
-                    [class.status-ready]="order.status === 'READY'"
-                    [class.status-cancelled]="order.status === 'CANCELLED'"
-                    [class.status-completed]="order.status === 'COMPLETED'"
-                  >
-                    {{ statusLabel(order.status) }}
-                  </span>
-                </td>
-                <td>{{ order.orderTime | date: 'short' }}</td>
-              </tr>
-            }
-          } @else {
-            <tr>
-              <td colspan="5" class="empty-state">
-                No active orders yet. New orders will appear here.
-              </td>
-            </tr>
+    <div class="right-column">
+      <article class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Hourly Revenue</h2>
+          @if (peakHour(); as peak) {
+            <span class="panel-chip">Peak: {{ peak.hourLabel }}</span>
           }
-        </tbody>
-      </table>
+        </div>
+
+        <div class="revenue-chart" aria-label="Hourly revenue chart">
+          @for (point of hourlyRevenue(); track point.hourLabel) {
+            <div class="revenue-column">
+              <div class="revenue-bar-shell">
+                <div class="revenue-bar" [style.height.%]="barHeight(point.amount)"></div>
+              </div>
+              <p class="revenue-value">{{ point.amount | currency: 'USD':'symbol':'1.0-0' }}</p>
+              <p class="revenue-label">{{ point.hourLabel }}</p>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Order Status Mix</h2>
+          <span class="panel-chip">Current Shift</span>
+        </div>
+
+        <ul class="status-list">
+          @for (slice of statusBreakdown(); track slice.status) {
+            <li class="status-row">
+              <div class="status-row-head">
+                <span>{{ statusLabel(slice.status) }}</span>
+                <span>{{ slice.count }} orders</span>
+              </div>
+              <div class="status-meter">
+                <div
+                  class="status-meter-fill"
+                  [class.status-pending]="slice.status === 'PENDING'"
+                  [class.status-preparing]="slice.status === 'PREPARING'"
+                  [class.status-ready]="slice.status === 'READY'"
+                  [class.status-cancelled]="slice.status === 'CANCELLED'"
+                  [class.status-completed]="slice.status === 'COMPLETED'"
+                  [style.width.%]="slice.percentage"
+                ></div>
+              </div>
+            </li>
+          }
+        </ul>
+      </article>
     </div>
   </div>
 </section>
