@@ -1,20 +1,51 @@
-<section class="page-surface orders-page">
-  <div class="page-header">
-    <div class="page-header-main">
-      <h1 class="page-title">Orders Management</h1>
-      <p class="page-subtitle">
+<section class="orders-shell">
+  <div class="orders-hero">
+    <div>
+      <h1 class="hero-title">Orders Management</h1>
+      <p class="hero-subtitle">
         View, confirm, and manage restaurant orders in real-time.
       </p>
     </div>
-    <div class="page-header-actions">
+
+    <div class="hero-meta">
+      <span class="hero-pill">
+        {{ selectedStatusFilter() ? getStatusLabel(selectedStatusFilter()!) : 'All Orders' }}
+      </span>
+      <span class="hero-pill hero-pill-accent">Page {{ currentPage() + 1 }} of {{ totalPages() || 1 }}</span>
       <button
         type="button"
-        class="btn btn-secondary"
+        class="btn btn-secondary hero-button"
         (click)="loadOrders()"
         [disabled]="loading()">
         {{ loading() ? 'Refreshing...' : 'Refresh Orders' }}
       </button>
     </div>
+  </div>
+
+  <div class="kpi-grid orders-kpi-grid">
+    <article class="kpi-card orders-kpi-card">
+      <p class="kpi-label">Total Orders</p>
+      <h2 class="kpi-value">{{ totalElements() }}</h2>
+      <p class="kpi-footnote">Orders returned for the current query</p>
+    </article>
+
+    <article class="kpi-card orders-kpi-card">
+      <p class="kpi-label">Visible Orders</p>
+      <h2 class="kpi-value">{{ orders().length }}</h2>
+      <p class="kpi-footnote">Orders shown on this page</p>
+    </article>
+
+    <article class="kpi-card orders-kpi-card">
+      <p class="kpi-label">Active Filter</p>
+      <h2 class="kpi-value">{{ selectedStatusFilter() ? getStatusLabel(selectedStatusFilter()!) : 'All' }}</h2>
+      <p class="kpi-footnote">Current status filter applied to the list</p>
+    </article>
+
+    <article class="kpi-card orders-kpi-card">
+      <p class="kpi-label">Page</p>
+      <h2 class="kpi-value">{{ currentPage() + 1 }} / {{ totalPages() || 1 }}</h2>
+      <p class="kpi-footnote">Paginated order feed</p>
+    </article>
   </div>
 
   @if (errorMessage()) {
@@ -31,8 +62,11 @@
     </div>
   }
 
-  <div class="toolbar-card">
-    <p class="context-label">Filter by Status</p>
+  <article class="panel toolbar-card">
+    <div class="panel-header">
+      <h2 class="panel-title">Filter by Status</h2>
+      <span class="panel-chip">{{ totalElements() }} total</span>
+    </div>
     <div class="filter-buttons">
       <button
         type="button"
@@ -51,12 +85,12 @@
         </button>
       }
     </div>
-  </div>
+  </article>
 
   @if (loading() && orders().length === 0) {
-    <div class="empty-note">Loading orders...</div>
+    <div class="panel empty-note">Loading orders...</div>
   } @else if (!loading() && orders().length === 0) {
-    <div class="empty-note">
+    <div class="panel empty-note">
       @if (selectedStatusFilter()) {
         No orders found with status "{{ getStatusLabel(selectedStatusFilter()!) }}". Try a different filter.
       } @else {
@@ -66,7 +100,7 @@
   } @else {
     <div class="orders-list">
       @for (order of filteredOrders(); track order.orderId) {
-        <article class="order-card">
+        <article class="panel order-card">
           <header class="order-header">
             <div class="order-info">
               <h3 class="order-id">Order #{{ order.orderId }}</h3>
@@ -335,24 +369,26 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination">
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="previousPage()"
-        [disabled]="currentPage() === 0">
-        Previous
-      </button>
-      <span class="pagination-info">
-        Page {{ currentPage() + 1 }} of {{ totalPages() }} ({{ orders().length }} / {{ totalElements() }} orders)
-      </span>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="nextPage()"
-        [disabled]="!totalPages() || currentPage() >= totalPages() - 1">
-        Next
-      </button>
+    <div class="panel pagination-panel">
+      <div class="pagination">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="previousPage()"
+          [disabled]="currentPage() === 0">
+          Previous
+        </button>
+        <span class="pagination-info">
+          Page {{ currentPage() + 1 }} of {{ totalPages() }} ({{ orders().length }} / {{ totalElements() }} orders)
+        </span>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="nextPage()"
+          [disabled]="!totalPages() || currentPage() >= totalPages() - 1">
+          Next
+        </button>
+      </div>
     </div>
   }
 </section>
