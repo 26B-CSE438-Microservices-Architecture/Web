@@ -1,6 +1,6 @@
-import { Component, DestroyRef, inject, NgZone, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, effect, inject, NgZone, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CurrencyPipe, DatePipe, SlicePipe, isPlatformBrowser } from '@angular/common';
+import { CurrencyPipe, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 
@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
   host: {
     ngSkipHydration: 'true'
   },
-  imports: [FormsModule, CurrencyPipe, DatePipe, SlicePipe],
+  imports: [FormsModule, CurrencyPipe],
   templateUrl: './restaurant-profile.component.html',
   styleUrls: ['./restaurant-profile.component.css']
 })
@@ -22,6 +22,7 @@ export class RestaurantProfileComponent implements OnInit {
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly ownerService = inject(OwnerService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly ngZone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -35,6 +36,19 @@ export class RestaurantProfileComponent implements OnInit {
   readonly statusUpdating = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+
+  constructor() {
+    effect(() => {
+      this.loading();
+      this.isEditing();
+
+      if (!this.isBrowser) {
+        return;
+      }
+
+      queueMicrotask(() => this.removeCoordinateArtifacts());
+    });
+  }
 
   ngOnInit(): void {
     if (!this.isBrowser) {
@@ -111,8 +125,6 @@ export class RestaurantProfileComponent implements OnInit {
       name: profile.name,
       description: profile.description,
       addressText: profile.addressText,
-      latitude: profile.latitude,
-      longitude: profile.longitude,
       logoUrl: profile.logoUrl,
       minOrderAmount: profile.minOrderAmount,
       deliveryFee: profile.deliveryFee
@@ -154,6 +166,12 @@ export class RestaurantProfileComponent implements OnInit {
         this.ngZone.run(() => {
           this.profile.set(updated);
           this.statusUpdating.set(false);
+
+          if (status === 'Open' || status === 'Closed') {
+            window.location.reload();
+            return;
+          }
+
           this.showSuccess(`Status changed to ${status}.`);
         });
       },
@@ -185,20 +203,32 @@ export class RestaurantProfileComponent implements OnInit {
     setTimeout(() => { this.successMessage.set(''); }, 3000);
   }
 
+  private removeCoordinateArtifacts(): void {
+    const root = this.hostElement.nativeElement;
+
+    root.querySelectorAll<HTMLElement>('.info-row, .field').forEach((element) => {
+      const label = element.querySelector<HTMLElement>('.info-label, label');
+      const labelText = label?.textContent?.trim().toLowerCase();
+
+      if (labelText === 'latitude' || labelText === 'longitude') {
+        element.remove();
+      }
+    });
+  }
+
   private emptyProfile(): RestaurantProfile {
     return {
-      id: '', name: '', description: '', cuisineType: '',
-      addressText: '', latitude: 0, longitude: 0, logoUrl: '',
-      minOrderAmount: 0, deliveryFee: 0, isActive: true,
-      status: 'Open', openingTime: '00:00:00', closingTime: '00:00:00',
-      createdAt: '', updatedAt: ''
+      id: '', name: '', description: '',
+      addressText: '', logoUrl: '',
+      minOrderAmount: 0, deliveryFee: 0,
+      status: 'Open', openingTime: '00:00:00', closingTime: '00:00:00'
     };
   }
 
   private emptyDraft(): UpdateRestaurantProfileDto {
     return {
       name: '', description: '', addressText: '',
-      latitude: 0, longitude: 0, logoUrl: '',
+      logoUrl: '',
       minOrderAmount: 0, deliveryFee: 0
     };
   }

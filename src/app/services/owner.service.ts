@@ -30,19 +30,13 @@ export class OwnerService {
     id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     name: 'Mock Bistro',
     description: 'Best burgers in town with fresh ingredients and bold flavors.',
-    cuisineType: 'American',
     addressText: 'Taksim Square, Istanbul, Turkey',
-    latitude: 41.0082,
-    longitude: 28.9784,
     logoUrl: '',
     minOrderAmount: 15.00,
     deliveryFee: 2.50,
-    isActive: true,
     status: 'Open',
     openingTime: '09:00:00',
-    closingTime: '22:00:00',
-    createdAt: '2026-01-15T10:00:00',
-    updatedAt: '2026-04-01T08:30:00'
+    closingTime: '22:00:00'
   };
 
   getCurrentOwner(): Observable<OwnerInfo> {
@@ -119,7 +113,7 @@ export class OwnerService {
 
   updateRestaurantProfile(restaurantId: string, dto: UpdateRestaurantProfileDto): Observable<RestaurantProfile> {
     if (this.useMockData) {
-      this.mockProfile = { ...this.mockProfile, ...dto, updatedAt: new Date().toISOString() };
+      this.mockProfile = { ...this.mockProfile, ...dto };
       return of({ ...this.mockProfile });
     }
 
@@ -127,8 +121,6 @@ export class OwnerService {
       name: dto.name,
       description: dto.description,
       address_text: dto.addressText,
-      latitude: dto.latitude,
-      longitude: dto.longitude,
       logo_url: dto.logoUrl,
       min_order_amount: dto.minOrderAmount,
       delivery_fee: dto.deliveryFee
@@ -267,19 +259,13 @@ export class OwnerService {
       id: this.readString(restaurant, 'id') || restaurantId,
       name: this.readString(restaurant, 'name'),
       description: this.readString(restaurant, 'description'),
-      cuisineType: this.readString(restaurant, 'cuisine_type', 'cuisineType'),
       addressText: this.readString(restaurant, 'address_text', 'addressText'),
-      latitude: this.readNumber(restaurant, 'latitude'),
-      longitude: this.readNumber(restaurant, 'longitude'),
       logoUrl: this.readString(restaurant, 'logo_url', 'logoUrl'),
       minOrderAmount: this.readNumber(deliveryInfo, 'minimum_basket_amount', 'min_order_amount', 'minimumBasketAmount'),
       deliveryFee: this.readNumber(deliveryInfo, 'delivery_fee', 'deliveryFee'),
-      isActive: status.toLowerCase() !== 'closed',
       status,
       openingTime: this.readString(workingHours, 'open', 'opening_time', 'openingTime'),
-      closingTime: this.readString(workingHours, 'close', 'closing_time', 'closingTime'),
-      createdAt: this.readString(restaurant, 'created_at', 'createdAt'),
-      updatedAt: this.readString(restaurant, 'updated_at', 'updatedAt')
+      closingTime: this.readString(workingHours, 'close', 'closing_time', 'closingTime')
     };
   }
 
