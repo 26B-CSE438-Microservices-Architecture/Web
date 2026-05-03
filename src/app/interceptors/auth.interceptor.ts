@@ -58,8 +58,8 @@ function handle401Error(
       switchMap(tokens => {
         isRefreshing = false;
         authService.storeTokens(tokens);
-        refreshTokenSubject.next(tokens.accessToken);
-        return next(addToken(req, tokens.accessToken));
+        refreshTokenSubject.next(tokens.access_token);
+        return next(addToken(req, tokens.access_token));
       }),
       catchError(err => {
         isRefreshing = false;

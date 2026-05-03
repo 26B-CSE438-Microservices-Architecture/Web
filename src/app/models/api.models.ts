@@ -19,13 +19,13 @@ export interface RegisterResponse {
 }
 
 export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn?: number;
+  access_token: string;
+  refresh_token?: string;
+  expires_in?: number;
 }
 
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  refresh_token: string;
 }
 
 export interface ChangePasswordRequest {

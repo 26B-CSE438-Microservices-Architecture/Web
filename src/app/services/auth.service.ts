@@ -31,22 +31,24 @@ export class AuthService {
   // -- Token helpers --------------------------------------------------------
 
   getAccessToken(): string | null {
-    return typeof window !== 'undefined'
-      ? localStorage.getItem(ACCESS_TOKEN_KEY)
-      : null;
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!token || token === 'undefined' || token === 'null') return null;
+    return token;
   }
 
   getRefreshToken(): string | null {
-    return typeof window !== 'undefined'
-      ? localStorage.getItem(REFRESH_TOKEN_KEY)
-      : null;
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!token || token === 'undefined' || token === 'null') return null;
+    return token;
   }
 
   storeTokens(tokens: AuthTokens): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-      if (tokens.refreshToken) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+      localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+      if (tokens.refresh_token) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
       }
     }
   }
@@ -76,7 +78,7 @@ export class AuthService {
   }
 
   refreshToken(refreshToken: string): Observable<AuthTokens> {
-    const body: RefreshTokenRequest = { refreshToken };
+    const body: RefreshTokenRequest = { refresh_token: refreshToken };
     return this.http.post<AuthTokens>(`${this.base}/refresh-token`, body);
   }
 
