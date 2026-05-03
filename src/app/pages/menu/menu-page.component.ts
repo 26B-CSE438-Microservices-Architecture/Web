@@ -172,6 +172,15 @@ export class MenuPageComponent {
     this.loadMenu();
   }
 
+  refreshMenu(): void {
+    if (this.selectedRestaurantId()) {
+      this.loadAdminMenu();
+      return;
+    }
+
+    this.resolveRestaurantContext();
+  }
+
   loadMenu(): void {
     const restaurantId = this.selectedRestaurantId();
     if (!restaurantId) {
@@ -194,6 +203,7 @@ export class MenuPageComponent {
         error: (error) => {
           this.errorMessage.set(this.extractErrorMessage(error));
           this.menu.set(null);
+          this.resolvingRestaurant.set(false);
         },
         complete: () => {
           this.loadingMenu.set(false);

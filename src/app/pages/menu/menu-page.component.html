@@ -7,35 +7,12 @@
       </p>
     </div>
     <div class="page-header-actions">
+      <button type="button" class="btn btn-secondary" (click)="refreshMenu()" [disabled]="loadingMenu() || resolvingRestaurant() || submitting()">
+        {{ resolvingRestaurant() ? 'Resolving...' : loadingMenu() ? 'Loading...' : 'Refresh Menu' }}
+      </button>
       <button type="button" class="btn btn-primary" (click)="openAddCategory()" [disabled]="!selectedRestaurantId() || submitting()">
         + Add Category
       </button>
-    </div>
-  </div>
-
-  <div class="toolbar-card">
-    <p class="context-label">Restaurant Context</p>
-    <div class="toolbar-row">
-      <div class="context-value">
-        @if (resolvingRestaurant()) {
-          Resolving your restaurant profile...
-        } @else if (selectedRestaurantName()) {
-          {{ selectedRestaurantName() }}
-        } @else {
-          Not resolved
-        }
-      </div>
-      <button type="button" class="btn btn-secondary" (click)="resolveRestaurantContext()" [disabled]="resolvingRestaurant() || submitting()">
-        {{ resolvingRestaurant() ? 'Resolving...' : 'Re-resolve Restaurant' }}
-      </button>
-      <button type="button" class="btn btn-secondary" (click)="loadAdminMenu()" [disabled]="!selectedRestaurantId() || loadingMenu() || resolvingRestaurant()">
-        {{ loadingMenu() ? 'Loading...' : 'Refresh Menu' }}
-      </button>
-      @if (restaurants().length > 1) {
-        <button type="button" class="btn btn-secondary" (click)="switchRestaurant()" [disabled]="resolvingRestaurant() || submitting()">
-          Switch Restaurant
-        </button>
-      }
     </div>
   </div>
 
@@ -54,7 +31,7 @@
   }
 
   @if (!selectedRestaurantId()) {
-    <div class="empty-note">Restaurant context is not ready yet. Use "Re-resolve Restaurant" after login data is available.</div>
+    <div class="empty-note">Menu data is not ready yet. Use "Refresh Menu" after login data is available.</div>
   } @else {
     @if (loadingMenu()) {
       <div class="empty-note">Loading menu data...</div>
