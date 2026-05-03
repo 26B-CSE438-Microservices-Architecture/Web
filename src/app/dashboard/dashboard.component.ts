@@ -25,7 +25,6 @@ interface TopSellerItem {
   name: string;
   soldUnits: number;
   revenue: number;
-  stockLeft: number | null;
 }
 
 interface HourlyRevenuePoint {
@@ -43,7 +42,6 @@ interface DashboardViewModel {
   todayLabel: string;
   summary: DashboardSummary;
   menuItemsCount: number;
-  lowStockItemsCount: number;
   topSellers: TopSellerItem[];
   recentOrders: RecentOrderRow[];
   hourlyRevenue: HourlyRevenuePoint[];
@@ -62,7 +60,6 @@ const EMPTY_VIEW_MODEL: DashboardViewModel = {
     dailyRevenue: 0
   },
   menuItemsCount: 0,
-  lowStockItemsCount: 0,
   topSellers: [],
   recentOrders: [],
   hourlyRevenue: [],
@@ -119,7 +116,6 @@ export class DashboardComponent {
   readonly today = computed(() => this.viewModel().todayLabel);
   readonly summary = computed(() => this.viewModel().summary);
   readonly menuItemsCount = computed(() => this.viewModel().menuItemsCount);
-  readonly lowStockItemsCount = computed(() => this.viewModel().lowStockItemsCount);
   readonly topSellers = computed(() => this.viewModel().topSellers);
   readonly recentOrders = computed(() => this.viewModel().recentOrders);
   readonly hourlyRevenue = computed(() => this.viewModel().hourlyRevenue);
@@ -144,14 +140,6 @@ export class DashboardComponent {
     }
 
     return Math.max((amount / this.maxHourlyRevenue()) * 100, 8);
-  }
-
-  stockLabel(stockLeft: number | null): string {
-    if (stockLeft === null) {
-      return 'Stock n/a';
-    }
-
-    return `${stockLeft} left`;
   }
 
   statusLabel(status: DashboardOrderStatus): string {
@@ -180,9 +168,6 @@ export class DashboardComponent {
 
     const products = this.flattenMenuProducts(menu);
     const menuItemsCount = products.length;
-    const lowStockItemsCount = products.filter(
-      product => product.isAvailable && (product.stockCount ?? 0) > 0 && (product.stockCount ?? 0) <= 10
-    ).length;
     const activeOrders = todayOrders.filter(order => !this.isTerminalStatus(order.status));
 
     return {
@@ -197,7 +182,6 @@ export class DashboardComponent {
         dailyRevenue: this.computeDailyRevenue(todayOrders)
       },
       menuItemsCount,
-      lowStockItemsCount,
       topSellers: this.computeTopSellers(orders, products),
       recentOrders: sortedOrders.slice(0, 6).map(order => ({
         orderId: order.orderId,
@@ -226,9 +210,6 @@ export class DashboardComponent {
   }
 
   private computeTopSellers(orders: OrderResponse[], menuProducts: ProductDto[]): TopSellerItem[] {
-    const stockByName = new Map(
-      menuProducts.map(product => [product.name.trim().toLowerCase(), product.stockCount ?? null])
-    );
     const aggregated = new Map<string, TopSellerItem>();
 
     for (const order of orders) {
@@ -241,8 +222,7 @@ export class DashboardComponent {
             id: item.productId,
             name: item.productName,
             soldUnits: item.quantity,
-            revenue: item.subtotal.amount,
-            stockLeft: stockByName.get(key) ?? null
+            revenue: item.subtotal.amount
           });
           continue;
         }

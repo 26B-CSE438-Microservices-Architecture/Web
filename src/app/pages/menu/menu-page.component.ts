@@ -83,18 +83,14 @@ export class MenuPageComponent {
   readonly productForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
     description: ['', [Validators.maxLength(500)]],
-    price: [0, [Validators.required, Validators.min(0)]],
-    imageUrl: ['', [Validators.maxLength(500)]],
-    stockCount: [0, [Validators.required, Validators.min(0)]]
+    price: [0, [Validators.required, Validators.min(0)]]
   });
 
   readonly editProductForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
     description: ['', [Validators.maxLength(500)]],
     price: [0, [Validators.required, Validators.min(0)]],
-    imageUrl: ['', [Validators.maxLength(500)]],
-    categoryId: ['', [Validators.required]],
-    stockCount: [0, [Validators.required, Validators.min(0)]]
+    categoryId: ['', [Validators.required]]
   });
 
   constructor() {
@@ -312,9 +308,7 @@ export class MenuPageComponent {
     this.productForm.reset({
       name: '',
       description: '',
-      price: 0,
-      imageUrl: '',
-      stockCount: 0
+      price: 0
     });
   }
 
@@ -328,7 +322,10 @@ export class MenuPageComponent {
       return;
     }
 
-    const payload: CreateProductDto = this.productForm.getRawValue();
+    const payload: CreateProductDto = {
+      ...this.productForm.getRawValue(),
+      imageUrl: ''
+    };
     this.submitting.set(true);
     this.errorMessage.set(null);
 
@@ -358,9 +355,7 @@ export class MenuPageComponent {
       name: product.name,
       description: product.description,
       price: product.price,
-      imageUrl: product.imageUrl,
-      categoryId: product.categoryId,
-      stockCount: product.stockCount ?? 0
+      categoryId: product.categoryId
     });
   }
 
@@ -374,7 +369,11 @@ export class MenuPageComponent {
       return;
     }
 
-    const payload: UpdateProductDto = this.editProductForm.getRawValue();
+    const existingProduct = this.findProductById(productId);
+    const payload: UpdateProductDto = {
+      ...this.editProductForm.getRawValue(),
+      imageUrl: existingProduct?.imageUrl ?? ''
+    };
     this.submitting.set(true);
     this.errorMessage.set(null);
 
@@ -501,6 +500,12 @@ export class MenuPageComponent {
 
     const maxOrder = Math.max(...currentMenu.categories.map((category) => category.displayOrder));
     return maxOrder + 1;
+  }
+
+  private findProductById(productId: string): ProductDto | undefined {
+    return this.sortedCategories()
+      .flatMap(category => category.products)
+      .find(product => product.id === productId);
   }
 
   private resolveRestaurantByName(restaurantName: string): void {

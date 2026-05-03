@@ -56,8 +56,7 @@ export class MenuService {
             description: 'Cheddar, lettuce, tomato',
             price: 9.5,
             isAvailable: true,
-            imageUrl: 'https://picsum.photos/200?1',
-            stockCount: 18
+            imageUrl: 'https://picsum.photos/200?1'
           },
           {
             id: 'prod-2',
@@ -66,8 +65,7 @@ export class MenuService {
             description: 'Herb rub and lemon',
             price: 11.25,
             isAvailable: true,
-            imageUrl: 'https://picsum.photos/200?2',
-            stockCount: 12
+            imageUrl: 'https://picsum.photos/200?2'
           }
         ]
       },
@@ -84,8 +82,7 @@ export class MenuService {
             description: 'Fresh brewed',
             price: 3.5,
             isAvailable: true,
-            imageUrl: '',
-            stockCount: 40
+            imageUrl: ''
           }
         ]
       }
@@ -188,8 +185,7 @@ export class MenuService {
         description: payload.description,
         price: payload.price,
         isAvailable: true,
-        imageUrl: payload.imageUrl,
-        stockCount: payload.stockCount ?? 0
+        imageUrl: payload.imageUrl
       };
 
       this.mockMenu = {
@@ -240,8 +236,7 @@ export class MenuService {
               description: payload.description,
               price: payload.price,
               imageUrl: payload.imageUrl,
-              categoryId: nextCategoryId,
-              stockCount: payload.stockCount ?? product.stockCount ?? 0
+              categoryId: nextCategoryId
             };
 
             updatedProduct = nextProduct;
@@ -426,8 +421,7 @@ export class MenuService {
       description: this.readString(product, 'description'),
       price: this.readNumber(product, 'price'),
       isAvailable: this.readBoolean(product, 'isAvailable', 'is_available'),
-      imageUrl: this.readString(product, 'imageUrl', 'image_url'),
-      stockCount: this.readOptionalNumber(product, 'stockCount', 'stock_count')
+      imageUrl: this.readString(product, 'imageUrl', 'image_url')
     };
   }
 
@@ -509,8 +503,7 @@ export class MenuService {
       description: payload.description,
       price: payload.price,
       isAvailable: true,
-      imageUrl: payload.imageUrl,
-      stockCount: payload.stockCount ?? 0
+      imageUrl: payload.imageUrl
     };
   }
 

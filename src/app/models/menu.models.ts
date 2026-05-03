@@ -24,7 +24,6 @@ export interface CreateProductDto {
   description: string;
   price: number;
   imageUrl: string;
-  stockCount?: number;
 }
 
 export interface UpdateProductDto {
@@ -33,7 +32,6 @@ export interface UpdateProductDto {
   price: number;
   imageUrl: string;
   categoryId?: string;
-  stockCount?: number;
 }
 
 export interface UpdateStockDto {
@@ -48,7 +46,6 @@ export interface ProductDto {
   price: number;
   isAvailable: boolean;
   imageUrl: string;
-  stockCount?: number;
 }
 
 export interface CategoryDto {
