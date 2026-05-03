@@ -18,12 +18,8 @@ import {
 
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
   providedIn: 'root'
 })
 export class AuthService {
@@ -31,7 +27,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly base = `${environment.apiBaseUrl}/auth`;
 
-  // ── Token helpers ────────────────────────────────────────────────────────
+  // -- Token helpers --------------------------------------------------------
 
   getAccessToken(): string | null {
     return typeof window !== 'undefined'
@@ -62,34 +58,16 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-
-  private apiUrl = 'http://localhost:5000/api/v1/auth';
-
-  constructor(private http: HttpClient) {}
-
-  login(email: string, password: string) {
-    return this.http.post<any>(`${this.apiUrl}/login`, {
-      email: email,
-      password: password
-    }).pipe(
-      tap(response => {
-        localStorage.setItem('token', response.access_token);
-        localStorage.setItem('refresh_token', response.refresh_token);
-      })
-    );
-  }
-
   get isLoggedIn(): boolean {
     return !!this.getAccessToken();
   }
 
-  // ── Auth endpoints ───────────────────────────────────────────────────────
+  // -- Auth endpoints -------------------------------------------------------
 
   login(credentials: LoginRequest): Observable<AuthTokens> {
     return this.http.post<AuthTokens>(`${this.base}/login`, credentials).pipe(
       tap(tokens => this.storeTokens(tokens))
     );
-    return !!localStorage.getItem('token');
   }
 
   register(data: RegisterRequest): Observable<AuthTokens> {
@@ -141,8 +119,5 @@ export class AuthService {
 
   deleteAccount(): Observable<void> {
     return this.http.delete<void>(`${this.base}/account`);
-  logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
   }
 }

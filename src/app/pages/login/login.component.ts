@@ -34,7 +34,7 @@ export class LoginComponent {
   }
 
   login(): void {
-    this.auth.login(this.email, this.password).subscribe({
+    this.auth.login({ email: this.email, password: this.password }).subscribe({
       next: () => {
         if (typeof window !== 'undefined') {
           if (this.rememberMe) {
