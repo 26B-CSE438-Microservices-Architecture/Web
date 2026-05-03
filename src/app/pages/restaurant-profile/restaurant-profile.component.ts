@@ -4,6 +4,7 @@ import { CurrencyPipe, DatePipe, SlicePipe } from '@angular/common';
 
 import { OwnerService } from '../../services/owner.service';
 import { RestaurantProfile, UpdateRestaurantProfileDto } from '../../models/owner.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-restaurant-profile',
@@ -26,13 +27,32 @@ export class RestaurantProfileComponent implements OnInit {
   errorMessage = '';
 
   ngOnInit(): void {
+    // Prefer the vendor ID saved from the menu page, then the env default
+    const savedId = localStorage.getItem('menu_restaurant_id');
+    const restaurantId = savedId || environment.defaultVendorId || '';
+
+    if (restaurantId) {
+      this.ownerService.getRestaurantProfile(restaurantId).subscribe({
+        next: (data) => {
+          this.profile = data;
+          this.loading = false;
+        },
+        error: () => {
+          this.errorMessage = 'Failed to load restaurant profile.';
+          this.loading = false;
+        }
+      });
+      return;
+    }
+
     this.ownerService.getCurrentOwner().subscribe(owner => {
-      const restaurantId = owner.restaurantId;
-      if (!restaurantId) {
+      const ownerId = owner.restaurantId;
+      if (!ownerId) {
+        this.errorMessage = 'No restaurant found. Please visit the Menu page first.';
         this.loading = false;
         return;
       }
-      this.ownerService.getRestaurantProfile(restaurantId).subscribe({
+      this.ownerService.getRestaurantProfile(ownerId).subscribe({
         next: (data) => {
           this.profile = data;
           this.loading = false;

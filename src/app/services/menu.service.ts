@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 import {
@@ -95,7 +96,9 @@ export class MenuService {
       return of([this.mockRestaurant]);
     }
 
-    return this.http.get<RestaurantSummary[]>(this.apiBaseUrl);
+    return this.http.get<{ data: RestaurantSummary[] }>(this.apiBaseUrl).pipe(
+      map(response => response?.data ?? [])
+    );
   }
 
   getRestaurantMenu(restaurantId: string): Observable<MenuDto> {

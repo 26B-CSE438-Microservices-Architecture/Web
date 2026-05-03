@@ -8,6 +8,7 @@ import { MenuService } from '../services/menu.service';
 import { OrdersService } from '../services/orders.service';
 import { MenuDto, ProductDto } from '../models/menu.models';
 import { OrderResponse, OrderStatus as ApiOrderStatus } from '../models/orders.models';
+import { environment } from '../../environments/environment';
 
 type DashboardOrderStatus = 'PENDING' | 'PREPARING' | 'READY' | 'CANCELLED' | 'COMPLETED';
 
@@ -87,7 +88,23 @@ export class DashboardComponent {
       ),
       menu: this.menuService.getRestaurants().pipe(
         switchMap(restaurants => {
-          const restaurantId = restaurants[0]?.id;
+          // Prefer saved ID from menu page, then env default, then name match, then first
+          const savedId = typeof localStorage !== 'undefined' ? localStorage.getItem('menu_restaurant_id') : null;
+          const defaultId = environment.defaultVendorId;
+          const defaultName = environment.defaultVendorName?.trim().toLowerCase();
+
+          let restaurantId: string | undefined;
+          if (savedId) {
+            restaurantId = savedId;
+          } else if (defaultId) {
+            restaurantId = defaultId;
+          } else if (defaultName) {
+            restaurantId = restaurants.find(r => r.name.trim().toLowerCase() === defaultName)?.id;
+          }
+          if (!restaurantId) {
+            restaurantId = restaurants[0]?.id;
+          }
+
           if (!restaurantId) {
             return of(null);
           }

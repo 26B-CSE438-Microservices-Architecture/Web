@@ -20,10 +20,12 @@ import {
   CreateProductDto,
   MenuDto,
   ProductDto,
+  RestaurantSummary,
   UpdateCategoryDto,
   UpdateProductDto
 } from '../../models/menu.models';
 import { OwnerInfo } from '../../models/owner.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-menu-page',
@@ -53,6 +55,11 @@ export class MenuPageComponent {
   readonly addingProductToCategoryId = signal<string | null>(null);
   readonly editingProductId = signal<string | null>(null);
   readonly showingAddCategory = signal(false);
+  readonly showingRestaurantPicker = signal(false);
+  readonly restaurants = signal<RestaurantSummary[]>([]);
+
+  private readonly RESTAURANT_ID_KEY = 'menu_restaurant_id';
+  private readonly RESTAURANT_NAME_KEY = 'menu_restaurant_name';
 
   readonly sortedCategories = computed(() => {
     const currentMenu = this.menu();
@@ -95,10 +102,46 @@ export class MenuPageComponent {
       return;
     }
 
+    if (environment.defaultVendorId) {
+      this.selectedRestaurantId.set(environment.defaultVendorId);
+      this.selectedRestaurantName.set(environment.defaultVendorName ?? '');
+      this.loadMenu();
+      return;
+    }
+
+    const savedId = localStorage.getItem(this.RESTAURANT_ID_KEY);
+    const savedName = localStorage.getItem(this.RESTAURANT_NAME_KEY);
+    if (savedId) {
+      this.selectedRestaurantId.set(savedId);
+      this.selectedRestaurantName.set(savedName ?? '');
+      this.loadMenu();
+      return;
+    }
+
+    if (environment.defaultVendorName) {
+      this.resolvingRestaurant.set(true);
+      this.resolveRestaurantByName(environment.defaultVendorName);
+      return;
+    }
+
     this.resolveRestaurantContext();
   }
 
   resolveRestaurantContext(): void {
+    if (environment.defaultVendorId) {
+      this.selectedRestaurantId.set(environment.defaultVendorId);
+      this.selectedRestaurantName.set(environment.defaultVendorName ?? '');
+      this.loadMenu();
+      return;
+    }
+
+    if (environment.defaultVendorName) {
+      this.resolvingRestaurant.set(true);
+      this.errorMessage.set(null);
+      this.resolveRestaurantByName(environment.defaultVendorName);
+      return;
+    }
+
     this.resolvingRestaurant.set(true);
     this.errorMessage.set(null);
 
@@ -181,7 +224,9 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
+          this.showingAddCategory.set(false);
         },
         complete: () => {
           this.submitting.set(false);
@@ -221,6 +266,7 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -246,6 +292,7 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -290,6 +337,7 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -335,6 +383,7 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -356,6 +405,7 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -381,6 +431,7 @@ export class MenuPageComponent {
           this.loadMenu();
         },
         error: (error) => {
+          this.submitting.set(false);
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -401,6 +452,32 @@ export class MenuPageComponent {
 
   closeAddCategory(): void {
     this.showingAddCategory.set(false);
+  }
+
+  pickRestaurant(restaurant: RestaurantSummary): void {
+    localStorage.setItem(this.RESTAURANT_ID_KEY, restaurant.id);
+    localStorage.setItem(this.RESTAURANT_NAME_KEY, restaurant.name);
+    this.selectedRestaurantId.set(restaurant.id);
+    this.selectedRestaurantName.set(restaurant.name);
+    this.showingRestaurantPicker.set(false);
+    this.loadMenu();
+  }
+
+  closeRestaurantPicker(): void {
+    this.showingRestaurantPicker.set(false);
+    if (!this.selectedRestaurantId()) {
+      this.errorMessage.set('No restaurant selected. Click "Switch Restaurant" to pick one.');
+    }
+  }
+
+  switchRestaurant(): void {
+    localStorage.removeItem(this.RESTAURANT_ID_KEY);
+    localStorage.removeItem(this.RESTAURANT_NAME_KEY);
+    this.selectedRestaurantId.set('');
+    this.selectedRestaurantName.set('');
+    this.menu.set(null);
+    this.resetEditorState();
+    this.resolveRestaurantContext();
   }
 
   private resetEditorState(): void {
@@ -427,15 +504,21 @@ export class MenuPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (restaurants) => {
-          const normalizedOwnerRestaurantName = restaurantName.trim().toLowerCase();
-          const byName = restaurants.find(
-            (restaurant) => restaurant.name.trim().toLowerCase() === normalizedOwnerRestaurantName
-          );
+          if (restaurantName && restaurantName.trim().length > 0) {
+            const normalizedOwnerRestaurantName = restaurantName.trim().toLowerCase();
+            const byName = restaurants.find(
+              (restaurant) => restaurant.name.trim().toLowerCase() === normalizedOwnerRestaurantName
+            );
 
-          if (byName) {
-            this.selectedRestaurantId.set(byName.id);
-            this.loadMenu();
-            return;
+            if (byName) {
+              this.selectedRestaurantId.set(byName.id);
+              this.selectedRestaurantName.set(byName.name);
+              localStorage.setItem(this.RESTAURANT_ID_KEY, byName.id);
+              localStorage.setItem(this.RESTAURANT_NAME_KEY, byName.name);
+              this.resolvingRestaurant.set(false);
+              this.loadMenu();
+              return;
+            }
           }
 
           if (restaurants.length === 1) {
@@ -445,10 +528,9 @@ export class MenuPageComponent {
             return;
           }
 
+          this.restaurants.set(restaurants);
           this.resolvingRestaurant.set(false);
-          this.errorMessage.set(
-            'Unable to resolve admin restaurant automatically. Backend should provide restaurantId in /owners/me for a reliable match.'
-          );
+          this.showingRestaurantPicker.set(true);
         },
         error: (error) => {
           this.resolvingRestaurant.set(false);
@@ -460,10 +542,6 @@ export class MenuPageComponent {
   private extractRestaurantId(owner: OwnerInfo): string | null {
     if (owner.restaurantId && owner.restaurantId.trim().length > 0) {
       return owner.restaurantId;
-    }
-
-    if (owner.id && owner.id.trim().length > 0) {
-      return owner.id;
     }
 
     return null;

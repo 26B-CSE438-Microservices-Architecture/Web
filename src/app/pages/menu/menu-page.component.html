@@ -31,6 +31,11 @@
       <button type="button" class="btn btn-secondary" (click)="loadAdminMenu()" [disabled]="!selectedRestaurantId() || loadingMenu() || resolvingRestaurant()">
         {{ loadingMenu() ? 'Loading...' : 'Refresh Menu' }}
       </button>
+      @if (restaurants().length > 1) {
+        <button type="button" class="btn btn-secondary" (click)="switchRestaurant()" [disabled]="resolvingRestaurant() || submitting()">
+          Switch Restaurant
+        </button>
+      }
     </div>
   </div>
 
@@ -235,6 +240,28 @@
             <button class="btn btn-secondary" type="button" (click)="closeAddCategory()">Cancel</button>
           </div>
         </form>
+      </div>
+    </div>
+  }
+
+  @if (showingRestaurantPicker()) {
+    <div class="modal-scrim" (click)="closeRestaurantPicker()">
+      <div class="modal-card picker-card" role="dialog" aria-modal="true" aria-labelledby="picker-title" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="section-title" id="picker-title">Select Your Restaurant</h2>
+          @if (selectedRestaurantId()) {
+            <button type="button" class="btn-close" (click)="closeRestaurantPicker()">Close</button>
+          }
+        </div>
+        <p class="picker-hint">Multiple restaurants found. Select the one you manage.</p>
+        <div class="picker-list">
+          @for (restaurant of restaurants(); track restaurant.id) {
+            <button type="button" class="picker-item" [class.picker-item-active]="restaurant.id === selectedRestaurantId()" (click)="pickRestaurant(restaurant)">
+              <span class="picker-name">{{ restaurant.name }}</span>
+              <span class="picker-id">ID: {{ restaurant.id }}</span>
+            </button>
+          }
+        </div>
       </div>
     </div>
   }
