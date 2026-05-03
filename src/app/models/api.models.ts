@@ -6,10 +6,16 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
+  name: string;
+  surname: string;
   email: string;
+  phone_number: string;
   password: string;
-  firstName: string;
-  lastName: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user_id?: string;
 }
 
 export interface AuthTokens {

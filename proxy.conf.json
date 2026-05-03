@@ -1,0 +1,8 @@
+{
+  "/cse-438": {
+    "target": "https://gw.cse.akdeniz.edu.tr",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import {
   LoginRequest,
   RegisterRequest,
+  RegisterResponse,
   AuthTokens,
   RefreshTokenRequest,
   ChangePasswordRequest,
@@ -70,10 +71,8 @@ export class AuthService {
     );
   }
 
-  register(data: RegisterRequest): Observable<AuthTokens> {
-    return this.http.post<AuthTokens>(`${this.base}/register`, data).pipe(
-      tap(tokens => this.storeTokens(tokens))
-    );
+  register(data: RegisterRequest): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.base}/register`, data);
   }
 
   refreshToken(refreshToken: string): Observable<AuthTokens> {

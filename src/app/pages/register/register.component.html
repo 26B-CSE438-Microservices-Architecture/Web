@@ -1,0 +1,116 @@
+<div class="register-page">
+  <h1>Restaurant Admin Registration</h1>
+  <p class="subtitle">Create your account to manage your restaurant</p>
+
+  <form (ngSubmit)="register()">
+
+    <!-- Name Row -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="name">First Name</label>
+        <input
+          type="text"
+          id="name"
+          [(ngModel)]="name"
+          name="name"
+          placeholder="First name"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="surname">Last Name</label>
+        <input
+          type="text"
+          id="surname"
+          [(ngModel)]="surname"
+          name="surname"
+          placeholder="Last name"
+          required
+        />
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input
+        type="email"
+        id="email"
+        [(ngModel)]="email"
+        name="email"
+        placeholder="Enter your email"
+        required
+      />
+    </div>
+
+    <!-- Phone -->
+    <div class="form-group">
+      <label for="phone_number">Phone Number</label>
+      <input
+        type="tel"
+        id="phone_number"
+        [(ngModel)]="phone_number"
+        name="phone_number"
+        placeholder="e.g. 5551234567"
+        required
+      />
+    </div>
+
+    <!-- Password -->
+    <div class="form-group password-group">
+      <label for="password">Password</label>
+      <div class="password-wrapper">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          id="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="Min. 6 characters"
+          required
+        />
+        <span class="eye-icon" (click)="togglePassword()">
+          {{ showPassword ? '◐' : '◎' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Confirm Password -->
+    <div class="form-group password-group">
+      <label for="confirmPassword">Confirm Password</label>
+      <div class="password-wrapper">
+        <input
+          [type]="showConfirmPassword ? 'text' : 'password'"
+          id="confirmPassword"
+          [(ngModel)]="confirmPassword"
+          name="confirmPassword"
+          placeholder="Repeat your password"
+          required
+        />
+        <span class="eye-icon" (click)="toggleConfirmPassword()">
+          {{ showConfirmPassword ? '◐' : '◎' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Error -->
+    @if (errorMessage) {
+      <div class="alert alert-error">{{ errorMessage }}</div>
+    }
+
+    <!-- Success -->
+    @if (successMessage) {
+      <div class="alert alert-success">{{ successMessage }}</div>
+    }
+
+    <!-- Submit -->
+    <button type="submit" [disabled]="isLoading">
+      {{ isLoading ? 'Registering...' : 'Create Account' }}
+    </button>
+
+  </form>
+
+  <div class="login-link">
+    Already have an account? <a routerLink="/login">Sign in</a>
+  </div>
+</div>
