@@ -16,37 +16,38 @@ export class LoginComponent {
   password: string = '';
   showPassword: boolean = false;
   rememberMe: boolean = false;
+  errorMessage: string = '';
 
   constructor(private router: Router, private auth: AuthService) {
-
-  if (typeof window !== 'undefined') {
-    const savedEmail = localStorage.getItem('rememberedEmail');
-
-    if (savedEmail) {
-      this.email = savedEmail;
-      this.rememberMe = true;
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('rememberedEmail');
+      if (savedEmail) {
+        this.email = savedEmail;
+        this.rememberMe = true;
+      }
     }
   }
-}
 
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
 
- login() {
-  if (this.auth.login(this.email, this.password)) {
-
-    if (typeof window !== 'undefined') {
-      if (this.rememberMe) {
-        localStorage.setItem('rememberedEmail', this.email);
-      } else {
-        localStorage.removeItem('rememberedEmail');
+  login() {
+    this.errorMessage = '';
+    this.auth.login({ email: this.email, password: this.password }).subscribe({
+      next: () => {
+        if (typeof window !== 'undefined') {
+          if (this.rememberMe) {
+            localStorage.setItem('rememberedEmail', this.email);
+          } else {
+            localStorage.removeItem('rememberedEmail');
+          }
+        }
+        this.router.navigate(['/dashboard']);
+      },
+      error: () => {
+        this.errorMessage = 'Invalid email or password';
       }
-    }
-
-    this.router.navigate(['/dashboard']);
-  } else {
-    alert('Invalid email or password');
+    });
   }
-}
 }

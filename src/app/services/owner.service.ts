@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 import { OwnerInfo, RestaurantStatus, RestaurantProfile, UpdateRestaurantProfileDto } from '../models/owner.models';
 
@@ -9,11 +10,11 @@ import { OwnerInfo, RestaurantStatus, RestaurantProfile, UpdateRestaurantProfile
 })
 export class OwnerService {
   private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = '/api';
-  private readonly restaurantApiUrl = '/api/restaurant/api/v1';
+  private readonly apiBaseUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly restaurantApiUrl = `${environment.apiBaseUrl}/vendors`;
 
-  // Mock mode: set to true to use in-memory data instead of backend calls.
-  private readonly useMockData = true;
+  // Mock mode: false — data comes from the backend API
+  private readonly useMockData = false;
 
   private mockOwner: OwnerInfo = {
     id: 'mock-owner-1',
@@ -47,7 +48,7 @@ export class OwnerService {
       return of({ ...this.mockOwner });
     }
 
-    return this.http.get<OwnerInfo>(`${this.apiBaseUrl}/owners/me`);
+    return this.http.get<OwnerInfo>(`${this.apiBaseUrl}/me`);
   }
 
   setRestaurantStatus(status: RestaurantStatus): Observable<OwnerInfo> {
@@ -60,7 +61,7 @@ export class OwnerService {
     }
 
     return this.http.patch<OwnerInfo>(
-      `${this.apiBaseUrl}/restaurants/status`,
+      `${this.restaurantApiUrl}/me/status`,
       { status }
     );
   }
@@ -69,7 +70,7 @@ export class OwnerService {
     if (this.useMockData) {
       return of({ ...this.mockProfile });
     }
-    return this.http.get<RestaurantProfile>(`${this.restaurantApiUrl}/restaurants/${restaurantId}`);
+    return this.http.get<RestaurantProfile>(`${this.restaurantApiUrl}/${restaurantId}`);
   }
 
   updateRestaurantProfile(restaurantId: string, dto: UpdateRestaurantProfileDto): Observable<RestaurantProfile> {
@@ -77,7 +78,7 @@ export class OwnerService {
       this.mockProfile = { ...this.mockProfile, ...dto, updatedAt: new Date().toISOString() };
       return of({ ...this.mockProfile });
     }
-    return this.http.put<RestaurantProfile>(`${this.restaurantApiUrl}/restaurants/${restaurantId}`, dto);
+    return this.http.put<RestaurantProfile>(`${this.restaurantApiUrl}/${restaurantId}`, dto);
   }
 
   updateRestaurantStatus(restaurantId: string, status: string): Observable<RestaurantProfile> {
@@ -85,7 +86,7 @@ export class OwnerService {
       this.mockProfile = { ...this.mockProfile, status };
       return of({ ...this.mockProfile });
     }
-    return this.http.patch<RestaurantProfile>(`${this.restaurantApiUrl}/restaurants/${restaurantId}/status`, { status });
+    return this.http.patch<RestaurantProfile>(`${this.restaurantApiUrl}/${restaurantId}/status`, { status });
   }
 }
 
