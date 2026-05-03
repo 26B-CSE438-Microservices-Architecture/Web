@@ -17,6 +17,7 @@ import { OwnerInfo, RestaurantStatus } from '../models/owner.models';
 
 @Component({
   selector: 'app-navbar',
+  standalone: true,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
@@ -86,7 +87,14 @@ export class NavbarComponent {
       return;
     }
 
-    this.authService.logout();
-    void this.router.navigateByUrl('/login', { replaceUrl: true });
+    this.authService.logout().subscribe({
+      next: () => {
+        void this.router.navigateByUrl('/login', { replaceUrl: true });
+      },
+      error: () => {
+        // Fallback: clear session even if server-side logout fails
+        this.authService.clearSession();
+      }
+    });
   }
 }
