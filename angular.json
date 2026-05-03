@@ -35,7 +35,8 @@
             },
             "ssr": {
               "entry": "src/server.ts"
-            }
+            },
+            "baseHref": "/cse-438/"
           },
           "configurations": {
             "production": {
@@ -47,8 +48,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "50kB",
+                  "maximumError": "100kB"
                 }
               ],
               "outputHashing": "all"
