@@ -1,30 +1,34 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { tap } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root' // ✅ makes this service globally injectable
+  providedIn: 'root'
 })
 export class AuthService {
-  private _isLoggedIn: boolean = false;
 
-  constructor() {}
+  private apiUrl = 'http://localhost:5000/api/v1/auth';
 
-  // Login method
-  login(email: string, password: string): boolean {
-    // Dummy check — replace with real authentication logic
-    if (email === 'admin@example.com' && password === '1234') {
-      this._isLoggedIn = true;
-      return true;
-    }
-    this._isLoggedIn = false;
-    return false;
+  constructor(private http: HttpClient) {}
+
+  login(email: string, password: string) {
+    return this.http.post<any>(`${this.apiUrl}/login`, {
+      email: email,
+      password: password
+    }).pipe(
+      tap(response => {
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+      })
+    );
   }
 
-  // Getter for login status
   get isLoggedIn(): boolean {
-    return this._isLoggedIn;
+    return !!localStorage.getItem('token');
   }
 
   logout(): void {
-    this._isLoggedIn = false;
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
   }
 }
