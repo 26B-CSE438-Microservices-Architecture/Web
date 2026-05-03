@@ -6,6 +6,10 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import * as https from 'node:https';
+import type { IncomingMessage } from 'node:http';
+
+const GATEWAY_HOST = 'gw.cse.akdeniz.edu.tr';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -34,6 +38,44 @@ app.use(
     redirect: false,
   }),
 );
+
+/**
+ * Proxy /cse-438/** directly to the remote gateway.
+ * This is needed because Express (SSR server) is the one listening on port 4200,
+ * so the Vite proxyConfig alone cannot intercept API calls.
+ */
+app.use('/cse-438', (req, res) => {
+  const targetPath = '/cse-438' + (req.url ?? '/');
+
+  // Copy headers, replacing host with the gateway host
+  const proxyHeaders: Record<string, string | string[]> = {};
+  for (const [key, val] of Object.entries(req.headers)) {
+    if (key.toLowerCase() !== 'host' && val !== undefined) {
+      proxyHeaders[key] = val as string | string[];
+    }
+  }
+  proxyHeaders['host'] = GATEWAY_HOST;
+
+  const options: https.RequestOptions = {
+    hostname: GATEWAY_HOST,
+    path: targetPath,
+    method: req.method,
+    headers: proxyHeaders,
+  };
+
+  const proxyReq = https.request(options, (proxyRes: IncomingMessage) => {
+    res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers as Record<string, string>);
+    proxyRes.pipe(res, { end: true });
+  });
+
+  proxyReq.on('error', () => {
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Gateway unreachable' });
+    }
+  });
+
+  req.pipe(proxyReq, { end: true });
+});
 
 /**
  * Handle all other requests by rendering the Angular application.

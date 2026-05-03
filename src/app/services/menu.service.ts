@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 import {
   CategoryDto,
@@ -20,11 +21,10 @@ import {
 export class MenuService {
   private readonly http = inject(HttpClient);
 
-  // Gateway route: /api/restaurant/**, downstream restaurant-service route: /api/v1/**
-  private readonly apiBaseUrl = '/api/restaurant/api/v1';
+  private readonly apiBaseUrl = `${environment.apiBaseUrl}/vendors`;
 
-  // Mock mode: set to true to use in-memory data instead of backend calls.
-  private readonly useMockData = true;
+  // Mock mode: false — data comes from the backend API
+  private readonly useMockData = false;
 
   private readonly mockRestaurant: RestaurantSummary = {
     id: 'mock-restaurant-1',
@@ -95,7 +95,7 @@ export class MenuService {
       return of([this.mockRestaurant]);
     }
 
-    return this.http.get<RestaurantSummary[]>(`${this.apiBaseUrl}/restaurants`);
+    return this.http.get<RestaurantSummary[]>(this.apiBaseUrl);
   }
 
   getRestaurantMenu(restaurantId: string): Observable<MenuDto> {
@@ -106,7 +106,7 @@ export class MenuService {
       return of(this.cloneMenu(this.mockMenu));
     }
 
-    return this.http.get<MenuDto>(`${this.apiBaseUrl}/restaurants/${restaurantId}/menu`);
+    return this.http.get<MenuDto>(`${this.apiBaseUrl}/${restaurantId}/menu`);
   }
 
   createCategory(restaurantId: string, payload: CreateCategoryDto): Observable<CategoryDto> {
@@ -129,7 +129,7 @@ export class MenuService {
     }
 
     return this.http.post<CategoryDto>(
-      `${this.apiBaseUrl}/restaurants/${restaurantId}/categories`,
+      `${this.apiBaseUrl}/${restaurantId}/categories`,
       payload
     );
   }

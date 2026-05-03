@@ -1,6 +1,6 @@
-.login-page {
-  max-width: 400px;
-  margin: 100px auto;
+.register-page {
+  max-width: 480px;
+  margin: 60px auto;
   padding: 32px;
   border-radius: 8px;
   background-color: #ffffff;
@@ -8,10 +8,28 @@
   font-family: 'Inter', sans-serif;
 }
 
-.login-page h1 {
+.register-page h1 {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 6px;
   color: #1C2434;
+  font-size: 22px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* Two-column row for name + surname */
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-group {
+  flex: 1;
 }
 
 .form-group {
@@ -34,6 +52,12 @@
   box-sizing: border-box;
 }
 
+.form-group input:focus {
+  outline: none;
+  border-color: #E65100;
+  box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.15);
+}
+
 /* Password wrapper */
 .password-wrapper {
   position: relative;
@@ -44,6 +68,13 @@
   padding: 10px 40px 10px 12px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.password-wrapper input:focus {
+  outline: none;
+  border-color: #E65100;
+  box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.15);
 }
 
 .eye-icon {
@@ -55,31 +86,27 @@
   color: #64748b;
 }
 
-/* Forgot password right aligned */
-.forgot-password {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
-}
-
-.forgot-password a {
-  font-size: 13px;
-  color: #E65100;
-  text-decoration: none;
-}
-
-.forgot-password a:hover {
-  text-decoration: underline;
-}
-
-/* Remember me */
-.remember-me {
+/* Alerts */
+.alert {
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 14px;
   margin-bottom: 16px;
-  font-size: 13px;
-  color: #64748b;
 }
 
-/* Button */
+.alert-error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.alert-success {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+/* Submit button */
 button[type='submit'] {
   width: 100%;
   padding: 12px;
@@ -88,27 +115,34 @@ button[type='submit'] {
   border: none;
   border-radius: 4px;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-button[type='submit']:hover {
+button[type='submit']:hover:not(:disabled) {
   background-color: #BF360C;
 }
 
-/* Register link */
-.register-link {
+button[type='submit']:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Login link */
+.login-link {
   text-align: center;
   margin-top: 20px;
   font-size: 14px;
   color: #64748b;
 }
 
-.register-link a {
+.login-link a {
   color: #E65100;
   text-decoration: none;
   font-weight: 500;
 }
 
-.register-link a:hover {
+.login-link a:hover {
   text-decoration: underline;
 }

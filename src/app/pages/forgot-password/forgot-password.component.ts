@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -11,6 +12,7 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./forgot-password.component.css']
 })
 export class ForgotPasswordComponent {
+  private readonly auth = inject(AuthService);
 
   email = '';
   message = '';
@@ -27,14 +29,16 @@ export class ForgotPasswordComponent {
     }
 
     this.loading = true;
-
-    console.log('📨 Sending reset request for:', this.email);
-
-    setTimeout(() => {
-      this.loading = false;
-      this.message = 'Reset link sent (mock ✔)';
-      console.log('✅ Reset process completed for:', this.email);
-      this.email = '';
-    }, 1000);
+    this.auth.forgotPassword({ email: this.email }).subscribe({
+      next: () => {
+        this.loading = false;
+        this.message = 'If that email exists, a reset link has been sent.';
+        this.email = '';
+      },
+      error: () => {
+        this.loading = false;
+        this.error = 'Failed to send reset link. Please try again.';
+      }
+    });
   }
 }

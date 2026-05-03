@@ -16,37 +16,42 @@ export class LoginComponent {
   password: string = '';
   showPassword: boolean = false;
   rememberMe: boolean = false;
+  errorMessage: string = '';
 
   constructor(private router: Router, private auth: AuthService) {
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('rememberedEmail');
 
-  if (typeof window !== 'undefined') {
-    const savedEmail = localStorage.getItem('rememberedEmail');
-
-    if (savedEmail) {
-      this.email = savedEmail;
-      this.rememberMe = true;
+      if (savedEmail) {
+        this.email = savedEmail;
+        this.rememberMe = true;
+      }
     }
   }
-}
 
-  togglePassword() {
+  togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
- login() {
-  if (this.auth.login(this.email, this.password)) {
+  login(): void {
+    this.auth.login({ email: this.email, password: this.password }).subscribe({
+      next: () => {
+        if (typeof window !== 'undefined') {
+          if (this.rememberMe) {
+            localStorage.setItem('rememberedEmail', this.email);
+          } else {
+            localStorage.removeItem('rememberedEmail');
+          }
+        }
 
-    if (typeof window !== 'undefined') {
-      if (this.rememberMe) {
-        localStorage.setItem('rememberedEmail', this.email);
-      } else {
-        localStorage.removeItem('rememberedEmail');
-      }
-    }
-
-    this.router.navigate(['/dashboard']);
-  } else {
-    alert('Invalid email or password');
-  }
+        this.router.navigate(['/dashboard']);
+      },
+     error: (error: any) => {
+  console.error('Login error full:', error);
+  console.error('Status:', error.status);
+  console.error('Response:', error.error);
+  alert('Login failed. Check console.');
 }
+    });
+  }
 }
