@@ -1,11 +1,8 @@
 {
   "/cse-438": {
-    "target": "http://localhost:5000",
-    "secure": false,
+    "target": "https://gw.cse.akdeniz.edu.tr",
+    "secure": true,
     "changeOrigin": true,
-    "logLevel": "debug",
-    "pathRewrite": {
-      "^/cse-438": ""
-    }
+    "logLevel": "debug"
   }
 }

@@ -12,6 +12,15 @@ import { AuthService } from '../services/auth.service';
 
 let isRefreshing = false;
 const refreshTokenSubject = new BehaviorSubject<string | null>(null);
+const PUBLIC_AUTH_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh-token',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/confirm-email',
+  '/auth/verify-token'
+];
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -19,12 +28,13 @@ export const authInterceptor: HttpInterceptorFn = (
 ): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
   const token = authService.getAccessToken();
+  const isPublicAuthRequest = PUBLIC_AUTH_PATHS.some(path => req.url.includes(path));
 
-  const authReq = token ? addToken(req, token) : req;
+  const authReq = token && !isPublicAuthRequest ? addToken(req, token) : req;
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/login') && !req.url.includes('/auth/refresh-token')) {
+      if (error.status === 401 && !isPublicAuthRequest) {
         return handle401Error(req, next, authService);
       }
       return throwError(() => error);
