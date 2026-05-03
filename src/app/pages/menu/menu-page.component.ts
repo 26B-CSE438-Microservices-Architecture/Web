@@ -63,7 +63,7 @@ export class MenuPageComponent {
 
   readonly sortedCategories = computed(() => {
     const currentMenu = this.menu();
-    if (!currentMenu) {
+    if (!currentMenu || !Array.isArray(currentMenu.categories)) {
       return [] as CategoryDto[];
     }
 
@@ -150,7 +150,10 @@ export class MenuPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (owner) => {
-          this.selectedRestaurantName.set(owner.restaurantName);
+          if (owner.restaurantName) {
+            this.selectedRestaurantName.set(owner.restaurantName);
+          }
+
           const directRestaurantId = this.extractRestaurantId(owner);
           if (directRestaurantId) {
             this.selectedRestaurantId.set(directRestaurantId);
@@ -158,7 +161,7 @@ export class MenuPageComponent {
             return;
           }
 
-          this.resolveRestaurantByName(owner.restaurantName);
+          this.resolveRestaurantByName(owner.restaurantName ?? '');
         },
         error: (error) => {
           this.errorMessage.set(this.extractErrorMessage(error));
@@ -183,12 +186,14 @@ export class MenuPageComponent {
     this.errorMessage.set(null);
 
     this.menuService
-      .getRestaurantMenu(restaurantId)
+      .getRestaurantMenu(restaurantId, this.selectedRestaurantName())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (menu) => {
           this.menu.set(menu);
-          this.selectedRestaurantName.set(menu.restaurantName);
+          if (menu.restaurantName) {
+            this.selectedRestaurantName.set(menu.restaurantName);
+          }
         },
         error: (error) => {
           this.errorMessage.set(this.extractErrorMessage(error));
@@ -491,11 +496,11 @@ export class MenuPageComponent {
   private nextCategoryDisplayOrder(): number {
     const currentMenu = this.menu();
     if (!currentMenu || currentMenu.categories.length === 0) {
-      return 0;
+      return 1;
     }
 
-    const minOrder = Math.min(...currentMenu.categories.map((category) => category.displayOrder));
-    return minOrder - 1;
+    const maxOrder = Math.max(...currentMenu.categories.map((category) => category.displayOrder));
+    return maxOrder + 1;
   }
 
   private resolveRestaurantByName(restaurantName: string): void {
@@ -524,6 +529,8 @@ export class MenuPageComponent {
           if (restaurants.length === 1) {
             this.selectedRestaurantId.set(restaurants[0].id);
             this.selectedRestaurantName.set(restaurants[0].name);
+            localStorage.setItem(this.RESTAURANT_ID_KEY, restaurants[0].id);
+            localStorage.setItem(this.RESTAURANT_NAME_KEY, restaurants[0].name);
             this.loadMenu();
             return;
           }
@@ -557,6 +564,11 @@ export class MenuPageComponent {
         const maybeError = (error.error as { error?: string }).error;
         if (typeof maybeError === 'string' && maybeError.trim().length > 0) {
           return maybeError;
+        }
+
+        const maybeMessage = (error.error as { message?: string }).message;
+        if (typeof maybeMessage === 'string' && maybeMessage.trim().length > 0) {
+          return maybeMessage;
         }
       }
 

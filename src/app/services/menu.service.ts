@@ -22,7 +22,8 @@ import {
 export class MenuService {
   private readonly http = inject(HttpClient);
 
-  private readonly apiBaseUrl = `${environment.apiBaseUrl}/vendors`;
+  private readonly apiBaseUrl = environment.apiBaseUrl;
+  private readonly vendorsApiUrl = `${this.apiBaseUrl}/vendors`;
 
   // Mock mode: false — data comes from the backend API
   private readonly useMockData = false;
@@ -96,12 +97,12 @@ export class MenuService {
       return of([this.mockRestaurant]);
     }
 
-    return this.http.get<{ data: RestaurantSummary[] }>(this.apiBaseUrl).pipe(
-      map(response => response?.data ?? [])
+    return this.http.get<unknown>(this.vendorsApiUrl).pipe(
+      map(response => this.normalizeRestaurantList(response))
     );
   }
 
-  getRestaurantMenu(restaurantId: string): Observable<MenuDto> {
+  getRestaurantMenu(restaurantId: string, restaurantName = ''): Observable<MenuDto> {
     if (this.useMockData) {
       if (restaurantId !== this.mockMenu.restaurantId) {
         return of({ ...this.mockMenu, restaurantId, restaurantName: 'Mock Bistro' });
@@ -109,7 +110,9 @@ export class MenuService {
       return of(this.cloneMenu(this.mockMenu));
     }
 
-    return this.http.get<MenuDto>(`${this.apiBaseUrl}/${restaurantId}/menu`);
+    return this.http.get<unknown>(`${this.vendorsApiUrl}/${restaurantId}/menu`).pipe(
+      map(response => this.normalizeMenuResponse(response, restaurantId, restaurantName))
+    );
   }
 
   createCategory(restaurantId: string, payload: CreateCategoryDto): Observable<CategoryDto> {
@@ -132,7 +135,7 @@ export class MenuService {
     }
 
     return this.http.post<CategoryDto>(
-      `${this.apiBaseUrl}/${restaurantId}/categories`,
+      `${this.vendorsApiUrl}/${restaurantId}/categories`,
       payload
     );
   }
@@ -354,6 +357,124 @@ export class MenuService {
     }
 
     return this.http.delete<void>(`${this.apiBaseUrl}/products/${productId}`);
+  }
+
+  private normalizeRestaurantList(response: unknown): RestaurantSummary[] {
+    const record = this.asRecord(response);
+    const data = Array.isArray(record['data']) ? record['data'] : [];
+
+    return data.map((item) => this.normalizeRestaurantSummary(item));
+  }
+
+  private normalizeRestaurantSummary(value: unknown): RestaurantSummary {
+    const item = this.asRecord(value);
+
+    return {
+      id: this.readString(item, 'id'),
+      name: this.readString(item, 'name'),
+      description: this.readString(item, 'description'),
+      logoUrl: this.readString(item, 'logoUrl', 'logo_url', 'imageUrl', 'image_url'),
+      minOrderAmount: this.readNumber(item, 'minOrderAmount', 'min_order_amount'),
+      deliveryFee: this.readNumber(item, 'deliveryFee', 'delivery_fee'),
+      status: this.readString(item, 'status'),
+      distanceKm: this.readOptionalNumber(item, 'distanceKm', 'distance_km')
+    };
+  }
+
+  private normalizeMenuResponse(
+    response: unknown,
+    restaurantId: string,
+    restaurantName: string
+  ): MenuDto {
+    const menuRecord = this.asRecord(response);
+    const rawCategories = Array.isArray(response)
+      ? response
+      : Array.isArray(menuRecord['categories'])
+        ? (menuRecord['categories'] as unknown[])
+        : [];
+
+    return {
+      restaurantId: this.readString(menuRecord, 'restaurantId', 'restaurant_id') || restaurantId,
+      restaurantName: this.readString(menuRecord, 'restaurantName', 'restaurant_name') || restaurantName,
+      categories: rawCategories.map((category, index) =>
+        this.normalizeCategory(category, restaurantId, index)
+      )
+    };
+  }
+
+  private normalizeCategory(value: unknown, restaurantId: string, index: number): CategoryDto {
+    const category = this.asRecord(value);
+    const categoryId = this.readString(category, 'id');
+    const rawProducts = Array.isArray(category['products']) ? category['products'] : [];
+
+    return {
+      id: categoryId,
+      restaurantId: this.readString(category, 'restaurantId', 'restaurant_id') || restaurantId,
+      name: this.readString(category, 'name', 'title'),
+      displayOrder: this.readNumber(category, 'displayOrder', 'display_order', 'sortOrder', 'sort_order') || index,
+      products: rawProducts.map((product) => this.normalizeProduct(product, categoryId))
+    };
+  }
+
+  private normalizeProduct(value: unknown, categoryId: string): ProductDto {
+    const product = this.asRecord(value);
+
+    return {
+      id: this.readString(product, 'id'),
+      categoryId: this.readString(product, 'categoryId', 'category_id') || categoryId,
+      name: this.readString(product, 'name'),
+      description: this.readString(product, 'description'),
+      price: this.readNumber(product, 'price'),
+      isAvailable: this.readBoolean(product, 'isAvailable', 'is_available'),
+      imageUrl: this.readString(product, 'imageUrl', 'image_url'),
+      stockCount: this.readOptionalNumber(product, 'stockCount', 'stock_count')
+    };
+  }
+
+  private readString(record: Record<string, unknown>, ...keys: string[]): string {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === 'string') {
+        return value;
+      }
+    }
+
+    return '';
+  }
+
+  private readNumber(record: Record<string, unknown>, ...keys: string[]): number {
+    const value = this.readOptionalNumber(record, ...keys);
+    return value ?? 0;
+  }
+
+  private readOptionalNumber(record: Record<string, unknown>, ...keys: string[]): number | undefined {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+    }
+
+    return undefined;
+  }
+
+  private readBoolean(record: Record<string, unknown>, ...keys: string[]): boolean {
+    for (const key of keys) {
+      const value = record[key];
+      if (typeof value === 'boolean') {
+        return value;
+      }
+    }
+
+    return false;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> {
+    if (typeof value === 'object' && value !== null) {
+      return value as Record<string, unknown>;
+    }
+
+    return {};
   }
 
   private cloneMenu(menu: MenuDto): MenuDto {
