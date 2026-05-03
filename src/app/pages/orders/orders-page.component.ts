@@ -94,7 +94,7 @@ export class OrdersPageComponent {
           this.totalPages.set(response.totalPages);
           this.totalElements.set(response.totalElements);
         },
-        error: (error) => {
+        error: (error: unknown) => {
           this.errorMessage.set(this.extractErrorMessage(error));
           this.orders.set([]);
         },
@@ -164,7 +164,7 @@ export class OrdersPageComponent {
           this.editingOrderId.set(null);
           this.loadOrders();
         },
-        error: (error) => {
+        error: (error: unknown) => {
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -199,7 +199,7 @@ export class OrdersPageComponent {
           this.editingOrderId.set(null);
           this.loadOrders();
         },
-        error: (error) => {
+        error: (error: unknown) => {
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {
@@ -237,7 +237,7 @@ export class OrdersPageComponent {
           this.editingOrderId.set(null);
           this.loadOrders();
         },
-        error: (error) => {
+        error: (error: unknown) => {
           this.errorMessage.set(this.extractErrorMessage(error));
         },
         complete: () => {

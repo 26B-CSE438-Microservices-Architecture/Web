@@ -16,6 +16,7 @@ export class LoginComponent {
   password: string = '';
   showPassword: boolean = false;
   rememberMe: boolean = false;
+  errorMessage: string = '';
 
   constructor(private router: Router, private auth: AuthService) {
     if (typeof window !== 'undefined') {
