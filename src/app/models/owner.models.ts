@@ -1,9 +1,14 @@
-export type RestaurantStatus = 'OPEN' | 'CLOSED';
+export type RestaurantStatus = 'OPEN' | 'CLOSED' | 'BUSY';
 
 export interface OwnerInfo {
   id?: string;
   restaurantId?: string;
   name: string;
+  email?: string;
+  phone?: string | null;
+  role?: string;
+  active?: boolean;
+  createdAt?: string;
   restaurantName: string;
   openClosedStatus: RestaurantStatus;
 }
@@ -30,13 +35,10 @@ export interface RestaurantProfile {
 export interface UpdateRestaurantProfileDto {
   name: string;
   description: string;
-  cuisineType: string;
   addressText: string;
   latitude: number;
   longitude: number;
   logoUrl: string;
   minOrderAmount: number;
   deliveryFee: number;
-  openingTime: string;
-  closingTime: string;
 }

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './navbar/navbar.component';
 
@@ -6,8 +6,7 @@ import { NavbarComponent } from './navbar/navbar.component';
   selector: 'app-root',
   imports: [RouterOutlet, NavbarComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrl: './app.css'
 })
 export class App {
   protected readonly title = signal('restaurant-admin-panel');

@@ -105,6 +105,21 @@
   margin-bottom: var(--spacing-md);
 }
 
+.owner-panel-header {
+  margin-bottom: 0;
+}
+
+.profile-subsection-header {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 76, 129, 0.1);
+}
+
+.owner-meta-section {
+  padding-top: 0;
+  border-top: none;
+}
+
 .panel-title {
   margin: 0;
   font-size: 1.05rem;

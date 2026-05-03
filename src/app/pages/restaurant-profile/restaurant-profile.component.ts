@@ -1,132 +1,173 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, NgZone, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CurrencyPipe, DatePipe, SlicePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, SlicePipe, isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs';
 
 import { OwnerService } from '../../services/owner.service';
-import { RestaurantProfile, UpdateRestaurantProfileDto } from '../../models/owner.models';
+import { OwnerInfo, RestaurantProfile, UpdateRestaurantProfileDto } from '../../models/owner.models';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-restaurant-profile',
   standalone: true,
+  host: {
+    ngSkipHydration: 'true'
+  },
   imports: [FormsModule, CurrencyPipe, DatePipe, SlicePipe],
   templateUrl: './restaurant-profile.component.html',
   styleUrls: ['./restaurant-profile.component.css']
 })
 export class RestaurantProfileComponent implements OnInit {
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly ownerService = inject(OwnerService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly ngZone = inject(NgZone);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  profile: RestaurantProfile = this.emptyProfile();
+  readonly profile = signal<RestaurantProfile>(this.emptyProfile());
   editDraft: UpdateRestaurantProfileDto = this.emptyDraft();
+  readonly owner = signal<OwnerInfo>(this.emptyOwner());
 
-  isEditing = false;
-  loading = true;
-  saving = false;
-  statusUpdating = false;
-  successMessage = '';
-  errorMessage = '';
+  readonly isEditing = signal(false);
+  readonly loading = signal(true);
+  readonly saving = signal(false);
+  readonly statusUpdating = signal(false);
+  readonly successMessage = signal('');
+  readonly errorMessage = signal('');
 
   ngOnInit(): void {
-    // Prefer the vendor ID saved from the menu page, then the env default
-    const savedId = localStorage.getItem('menu_restaurant_id');
-    const restaurantId = savedId || environment.defaultVendorId || '';
-
-    if (restaurantId) {
-      this.ownerService.getRestaurantProfile(restaurantId).subscribe({
-        next: (data) => {
-          this.profile = data;
-          this.loading = false;
-        },
-        error: () => {
-          this.errorMessage = 'Failed to load restaurant profile.';
-          this.loading = false;
-        }
-      });
+    if (!this.isBrowser) {
       return;
     }
 
-    this.ownerService.getCurrentOwner().subscribe(owner => {
-      const ownerId = owner.restaurantId;
-      if (!ownerId) {
-        this.errorMessage = 'No restaurant found. Please visit the Menu page first.';
-        this.loading = false;
-        return;
-      }
-      this.ownerService.getRestaurantProfile(ownerId).subscribe({
+    this.loadProfile();
+    this.scheduleInitialRetry();
+  }
+
+  private loadProfile(): void {
+    if (this.retryTimer !== null) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+
+    this.loading.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    this.ownerService
+      .getCurrentOwner()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((owner) => {
+          this.owner.set(owner);
+
+          const savedId = localStorage.getItem('menu_restaurant_id');
+          const restaurantId = savedId || owner.restaurantId || environment.defaultVendorId || '';
+
+          if (!restaurantId) {
+            throw new Error('No restaurant found. Please visit the Menu page first.');
+          }
+
+          return this.ownerService.getRestaurantProfile(restaurantId);
+        })
+      )
+      .subscribe({
         next: (data) => {
-          this.profile = data;
-          this.loading = false;
+          this.ngZone.run(() => {
+            this.profile.set(data);
+            if (!this.owner().restaurantName) {
+              this.owner.update((owner) => ({ ...owner, restaurantName: data.name }));
+            }
+            this.loading.set(false);
+          });
         },
-        error: () => {
-          this.errorMessage = 'Failed to load restaurant profile.';
-          this.loading = false;
+        error: (error: unknown) => {
+          this.ngZone.run(() => {
+            this.errorMessage.set(
+              error instanceof Error
+                ? error.message
+                : 'Failed to load restaurant profile.'
+            );
+            this.loading.set(false);
+          });
         }
       });
-    });
+  }
+
+  private scheduleInitialRetry(): void {
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+
+      if (this.loading()) {
+        this.loadProfile();
+      }
+    }, 800);
   }
 
   startEdit(): void {
+    const profile = this.profile();
     this.editDraft = {
-      name: this.profile.name,
-      description: this.profile.description,
-      cuisineType: this.profile.cuisineType,
-      addressText: this.profile.addressText,
-      latitude: this.profile.latitude,
-      longitude: this.profile.longitude,
-      logoUrl: this.profile.logoUrl,
-      minOrderAmount: this.profile.minOrderAmount,
-      deliveryFee: this.profile.deliveryFee,
-      openingTime: this.toTimeInput(this.profile.openingTime),
-      closingTime: this.toTimeInput(this.profile.closingTime)
+      name: profile.name,
+      description: profile.description,
+      addressText: profile.addressText,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
+      logoUrl: profile.logoUrl,
+      minOrderAmount: profile.minOrderAmount,
+      deliveryFee: profile.deliveryFee
     };
-    this.isEditing = true;
-    this.errorMessage = '';
+    this.isEditing.set(true);
+    this.errorMessage.set('');
   }
 
   cancelEdit(): void {
-    this.isEditing = false;
-    this.errorMessage = '';
+    this.isEditing.set(false);
+    this.errorMessage.set('');
   }
 
   save(): void {
-    this.saving = true;
-    const payload: UpdateRestaurantProfileDto = {
-      ...this.editDraft,
-      openingTime: this.fromTimeInput(this.editDraft.openingTime),
-      closingTime: this.fromTimeInput(this.editDraft.closingTime)
-    };
-    this.ownerService.updateRestaurantProfile(this.profile.id, payload).subscribe({
+    this.saving.set(true);
+    this.ownerService.updateRestaurantProfile(this.profile().id, this.editDraft).subscribe({
       next: (updated) => {
-        this.profile = updated;
-        this.isEditing = false;
-        this.saving = false;
-        this.showSuccess('Profile updated successfully.');
+        this.ngZone.run(() => {
+          this.profile.set(updated);
+          this.isEditing.set(false);
+          this.saving.set(false);
+          this.showSuccess('Profile updated successfully.');
+        });
       },
       error: () => {
-        this.saving = false;
-        this.errorMessage = 'Failed to update profile. Please try again.';
+        this.ngZone.run(() => {
+          this.saving.set(false);
+          this.errorMessage.set('Failed to update profile. Please try again.');
+        });
       }
     });
   }
 
   setStatus(status: 'Open' | 'Closed' | 'Busy'): void {
-    if (this.profile.status === status || this.statusUpdating) return;
-    this.statusUpdating = true;
-    this.ownerService.updateRestaurantStatus(this.profile.id, status).subscribe({
+    if (this.profile().status === status || this.statusUpdating()) return;
+    this.statusUpdating.set(true);
+    this.ownerService.updateRestaurantStatus(this.profile().id, status).subscribe({
       next: (updated) => {
-        this.profile = updated;
-        this.statusUpdating = false;
-        this.showSuccess(`Status changed to ${status}.`);
+        this.ngZone.run(() => {
+          this.profile.set(updated);
+          this.statusUpdating.set(false);
+          this.showSuccess(`Status changed to ${status}.`);
+        });
       },
       error: () => {
-        this.statusUpdating = false;
-        this.errorMessage = 'Failed to update status.';
+        this.ngZone.run(() => {
+          this.statusUpdating.set(false);
+          this.errorMessage.set('Failed to update status.');
+        });
       }
     });
   }
 
   statusClass(): string {
-    switch (this.profile.status) {
+    switch (this.profile().status) {
       case 'Open':   return 'chip-open';
       case 'Busy':   return 'chip-busy';
       case 'Closed': return 'chip-closed';
@@ -139,17 +180,9 @@ export class RestaurantProfileComponent implements OnInit {
   }
 
   private showSuccess(msg: string): void {
-    this.successMessage = msg;
-    this.errorMessage = '';
-    setTimeout(() => { this.successMessage = ''; }, 3000);
-  }
-
-  private toTimeInput(t: string): string {
-    return t ? t.substring(0, 5) : '';
-  }
-
-  private fromTimeInput(t: string): string {
-    return t && t.length === 5 ? `${t}:00` : t;
+    this.successMessage.set(msg);
+    this.errorMessage.set('');
+    setTimeout(() => { this.successMessage.set(''); }, 3000);
   }
 
   private emptyProfile(): RestaurantProfile {
@@ -164,10 +197,24 @@ export class RestaurantProfileComponent implements OnInit {
 
   private emptyDraft(): UpdateRestaurantProfileDto {
     return {
-      name: '', description: '', cuisineType: '', addressText: '',
+      name: '', description: '', addressText: '',
       latitude: 0, longitude: 0, logoUrl: '',
-      minOrderAmount: 0, deliveryFee: 0,
-      openingTime: '09:00', closingTime: '22:00'
+      minOrderAmount: 0, deliveryFee: 0
+    };
+  }
+
+  private emptyOwner(): OwnerInfo {
+    return {
+      id: '',
+      name: 'Owner',
+      email: '',
+      phone: null,
+      role: '',
+      active: false,
+      createdAt: '',
+      restaurantId: '',
+      restaurantName: '',
+      openClosedStatus: 'CLOSED'
     };
   }
 }
