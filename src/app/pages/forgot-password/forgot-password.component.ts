@@ -20,24 +20,47 @@ export class ForgotPasswordComponent {
   loading = false;
 
   send() {
+    console.log('>>> ForgotPasswordComponent.send() triggered. Email:', this.email);
     this.message = '';
     this.error = '';
 
-    if (!this.email) {
-      this.error = 'Please enter your email';
+    const emailToSubmit = this.email?.trim();
+    if (!emailToSubmit) {
+      this.error = 'Please enter a valid email address.';
       return;
     }
 
+    const payload = { email: emailToSubmit };
+    
+    // Requirement 8: Log request details
+    console.log('Forgot Password Request:', {
+      endpoint: '/auth/forgot-password',
+      body: payload
+    });
+
     this.loading = true;
-    this.auth.forgotPassword({ email: this.email }).subscribe({
-      next: () => {
+    console.log('>>> Calling auth.forgotPassword(payload)...');
+
+    const obs = this.auth.forgotPassword(payload);
+    console.log('>>> Observable created:', obs);
+
+    obs.subscribe({
+      next: (res) => {
+        console.log('>>> Forgot password success response:', res);
         this.loading = false;
-        this.message = 'If that email exists, a reset link has been sent.';
+        this.message = 'Email sent! If that account exists, you will receive a reset link shortly.';
         this.email = '';
       },
-      error: () => {
+      error: (err) => {
+        console.error('>>> Forgot password error response:', err);
         this.loading = false;
-        this.error = 'Failed to send reset link. Please try again.';
+        
+        // Extract backend error message if available
+        const backendMessage = err.error?.message || err.error?.detail;
+        this.error = backendMessage || 'Failed to send reset link. Please try again.';
+      },
+      complete: () => {
+        console.log('>>> Forgot password observable completed.');
       }
     });
   }

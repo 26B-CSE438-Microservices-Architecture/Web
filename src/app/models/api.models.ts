@@ -38,8 +38,10 @@ export interface ForgotPasswordRequest {
 }
 
 export interface ResetPasswordRequest {
+  email: string;
   token: string;
-  newPassword: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface VerifyTokenRequest {
