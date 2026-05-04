@@ -7,9 +7,14 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 import * as https from 'node:https';
+import * as http from 'node:http';
 import type { IncomingMessage } from 'node:http';
 
-const GATEWAY_HOST = 'gw.cse.akdeniz.edu.tr';
+const API_BASE_URL = process.env['API_BASE_URL'] || 'https://gw.cse.akdeniz.edu.tr';
+const gatewayUrl = new URL(API_BASE_URL);
+const GATEWAY_HOST = gatewayUrl.hostname;
+const GATEWAY_PORT = gatewayUrl.port || (gatewayUrl.protocol === 'https:' ? '443' : '80');
+const GATEWAY_PROTOCOL = gatewayUrl.protocol;
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -56,14 +61,16 @@ app.use('/cse-438', (req, res) => {
   }
   proxyHeaders['host'] = GATEWAY_HOST;
 
-  const options: https.RequestOptions = {
+  const options = {
     hostname: GATEWAY_HOST,
+    port: GATEWAY_PORT,
     path: targetPath,
     method: req.method,
     headers: proxyHeaders,
   };
 
-  const proxyReq = https.request(options, (proxyRes: IncomingMessage) => {
+  const protocolReq = GATEWAY_PROTOCOL === 'https:' ? https : http;
+  const proxyReq = protocolReq.request(options, (proxyRes: IncomingMessage) => {
     res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers as Record<string, string>);
     proxyRes.pipe(res, { end: true });
   });
