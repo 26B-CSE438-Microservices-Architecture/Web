@@ -11,6 +11,7 @@ export interface OwnerInfo {
   createdAt?: string;
   restaurantName: string;
   openClosedStatus: RestaurantStatus;
+  restaurantSetupRequired?: boolean;
 }
 
 export interface RestaurantProfile {

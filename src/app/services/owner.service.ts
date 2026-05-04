@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable, of, switchMap, map, catchError, throwError, from } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -14,6 +14,8 @@ export class OwnerService {
   private readonly authService = inject(AuthService);
   private readonly usersApiUrl = `${environment.apiBaseUrl}/users`;
   private readonly restaurantApiUrl = `${environment.apiBaseUrl}/vendors`;
+  private readonly restaurantIdStorageKey = 'menu_restaurant_id';
+  private readonly restaurantNameStorageKey = 'menu_restaurant_name';
 
   // Mock mode: false — data comes from the backend API
   private readonly useMockData = false;
@@ -23,7 +25,8 @@ export class OwnerService {
     restaurantId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     name: 'Mock Owner',
     restaurantName: 'Mock Bistro',
-    openClosedStatus: 'OPEN'
+    openClosedStatus: 'OPEN',
+    restaurantSetupRequired: false
   };
 
   private mockProfile: RestaurantProfile = {
@@ -46,7 +49,7 @@ export class OwnerService {
 
     return this.getAuthorizedJson<unknown>(`${this.usersApiUrl}/me`).pipe(
       switchMap((user) =>
-        this.resolveRestaurantContext().pipe(
+        this.resolveRestaurantContext(user).pipe(
           switchMap((restaurant) => {
             if (!restaurant.id) {
               return of(this.normalizeOwnerInfo(user, restaurant.name, undefined, 'CLOSED'));
@@ -94,7 +97,8 @@ export class OwnerService {
             ...owner,
             restaurantId: restaurant.id,
             restaurantName: restaurant.name || owner.restaurantName,
-            openClosedStatus: status
+            openClosedStatus: status,
+            restaurantSetupRequired: false
           }))
         );
       })
@@ -111,9 +115,59 @@ export class OwnerService {
     );
   }
 
+  createRestaurantProfile(dto: UpdateRestaurantProfileDto): Observable<RestaurantProfile> {
+    if (this.useMockData) {
+      const restaurantId = `mock-${Date.now()}`;
+
+      this.mockProfile = {
+        ...this.mockProfile,
+        id: restaurantId,
+        name: dto.name,
+        description: dto.description,
+        addressText: dto.addressText,
+        logoUrl: dto.logoUrl,
+        minOrderAmount: dto.minOrderAmount,
+        deliveryFee: dto.deliveryFee
+      };
+
+      this.mockOwner = {
+        ...this.mockOwner,
+        restaurantId,
+        restaurantName: dto.name,
+        restaurantSetupRequired: false
+      };
+
+      this.storeRestaurantContext(restaurantId, dto.name);
+      return of({ ...this.mockProfile });
+    }
+
+    const payload = {
+      name: dto.name,
+      description: dto.description,
+      address_text: dto.addressText,
+      logo_url: dto.logoUrl,
+      min_order_amount: dto.minOrderAmount,
+      delivery_fee: dto.deliveryFee
+    };
+
+    return this.http.post<unknown>(this.restaurantApiUrl, payload, { observe: 'response' }).pipe(
+      switchMap((response) => {
+        const restaurantId = this.extractRestaurantIdFromCreateResponse(response);
+
+        if (!restaurantId) {
+          return throwError(() => new Error('Restaurant was created but no id was returned by the API.'));
+        }
+
+        this.storeRestaurantContext(restaurantId, dto.name);
+        return this.getRestaurantProfile(restaurantId);
+      })
+    );
+  }
+
   updateRestaurantProfile(restaurantId: string, dto: UpdateRestaurantProfileDto): Observable<RestaurantProfile> {
     if (this.useMockData) {
       this.mockProfile = { ...this.mockProfile, ...dto };
+      this.storeRestaurantContext(restaurantId, dto.name);
       return of({ ...this.mockProfile });
     }
 
@@ -131,7 +185,11 @@ export class OwnerService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).pipe(
-      switchMap(() => this.getRestaurantProfile(restaurantId))
+      switchMap(() => this.getRestaurantProfile(restaurantId)),
+      map((profile) => {
+        this.storeRestaurantContext(profile.id, profile.name);
+        return profile;
+      })
     );
   }
 
@@ -191,9 +249,15 @@ export class OwnerService {
     );
   }
 
-  private resolveRestaurantContext(): Observable<{ id?: string; name: string }> {
-    const savedId = this.readBrowserStorage('menu_restaurant_id');
-    const savedName = this.readBrowserStorage('menu_restaurant_name');
+  private resolveRestaurantContext(userResponse?: unknown): Observable<{ id?: string; name: string }> {
+    const userLinkedRestaurant = this.extractRestaurantContextFromUser(userResponse);
+    if (userLinkedRestaurant.id) {
+      this.storeRestaurantContext(userLinkedRestaurant.id, userLinkedRestaurant.name);
+      return of(userLinkedRestaurant);
+    }
+
+    const savedId = this.readBrowserStorage(this.restaurantIdStorageKey);
+    const savedName = this.readBrowserStorage(this.restaurantNameStorageKey);
 
     if (savedId) {
       return of({ id: savedId, name: savedName });
@@ -203,28 +267,28 @@ export class OwnerService {
       return of({ id: environment.defaultVendorId, name: environment.defaultVendorName ?? '' });
     }
 
-    return this.http.get<unknown>(this.restaurantApiUrl).pipe(
-      map((response) => {
-        const restaurants = this.normalizeRestaurantSummaries(response);
-        const defaultName = environment.defaultVendorName?.trim().toLowerCase();
+    return of({ id: undefined, name: '' });
+  }
 
-        const matchByName = defaultName
-          ? restaurants.find((restaurant) => restaurant.name.trim().toLowerCase() === defaultName)
-          : undefined;
+  private extractRestaurantContextFromUser(userResponse: unknown): { id?: string; name: string } {
+    const user = this.asRecord(userResponse);
+    const vendor = this.asRecord(user['vendor']);
+    const restaurant = this.asRecord(user['restaurant']);
 
-        const resolved = matchByName ?? restaurants[0];
+    const id =
+      this.readString(user, 'restaurantId', 'restaurant_id', 'vendorId', 'vendor_id') ||
+      this.readString(vendor, 'id', 'vendorId', 'vendor_id', 'restaurantId', 'restaurant_id') ||
+      this.readString(restaurant, 'id', 'restaurantId', 'restaurant_id', 'vendorId', 'vendor_id');
 
-        if (resolved?.id) {
-          this.writeBrowserStorage('menu_restaurant_id', resolved.id);
-          this.writeBrowserStorage('menu_restaurant_name', resolved.name);
-        }
+    const name =
+      this.readString(user, 'restaurantName', 'restaurant_name', 'vendorName', 'vendor_name') ||
+      this.readString(vendor, 'name', 'restaurantName', 'restaurant_name', 'vendorName', 'vendor_name') ||
+      this.readString(restaurant, 'name', 'restaurantName', 'restaurant_name', 'vendorName', 'vendor_name');
 
-        return {
-          id: resolved?.id,
-          name: resolved?.name ?? ''
-        };
-      })
-    );
+    return {
+      id: id || undefined,
+      name
+    };
   }
 
   private normalizeOwnerInfo(
@@ -244,8 +308,9 @@ export class OwnerService {
       role: this.readString(user, 'role'),
       active: this.readBoolean(user, 'active'),
       createdAt: this.readString(user, 'createdAt', 'created_at'),
-      restaurantName: restaurantName || 'Restaurant',
-      openClosedStatus
+      restaurantName,
+      openClosedStatus,
+      restaurantSetupRequired: !restaurantId
     };
   }
 
@@ -267,19 +332,6 @@ export class OwnerService {
       openingTime: this.readString(workingHours, 'open', 'opening_time', 'openingTime'),
       closingTime: this.readString(workingHours, 'close', 'closing_time', 'closingTime')
     };
-  }
-
-  private normalizeRestaurantSummaries(response: unknown): Array<{ id: string; name: string }> {
-    const record = this.asRecord(response);
-    const data = Array.isArray(record['data']) ? record['data'] : [];
-
-    return data.map((item) => {
-      const restaurant = this.asRecord(item);
-      return {
-        id: this.readString(restaurant, 'id'),
-        name: this.readString(restaurant, 'name')
-      };
-    }).filter((item) => item.id.length > 0);
   }
 
   private toOwnerStatus(status: string): RestaurantStatus {
@@ -316,6 +368,27 @@ export class OwnerService {
     if (typeof window !== 'undefined' && value) {
       localStorage.setItem(key, value);
     }
+  }
+
+  private storeRestaurantContext(id: string, name: string): void {
+    this.writeBrowserStorage(this.restaurantIdStorageKey, id);
+    this.writeBrowserStorage(this.restaurantNameStorageKey, name);
+  }
+
+  private extractRestaurantIdFromCreateResponse(response: HttpResponse<unknown>): string {
+    const body = this.asRecord(response.body);
+    const directId = this.readString(body, 'id', 'vendor_id', 'vendorId');
+    if (directId) {
+      return directId;
+    }
+
+    const locationHeader = response.headers.get('location') ?? response.headers.get('Location');
+    if (!locationHeader) {
+      return '';
+    }
+
+    const parts = locationHeader.split('/').filter(Boolean);
+    return parts.at(-1) ?? '';
   }
 
   private asRecord(value: unknown): Record<string, unknown> {

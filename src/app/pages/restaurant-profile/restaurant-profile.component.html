@@ -4,9 +4,11 @@
   <div class="profile-hero">
     <div>
       <h1 class="hero-title">Restaurant Profile</h1>
-      <p class="hero-subtitle">Manage your restaurant information and operational settings.</p>
+      <p class="hero-subtitle">
+        {{ setupMode() ? 'Set up your restaurant for the first time, then continue to menu management.' : 'Manage your restaurant information and operational settings.' }}
+      </p>
     </div>
-    @if (!loading()) {
+    @if (!loading() && !setupMode()) {
       <div class="hero-meta">
         <span class="hero-status-chip" [class]="statusClass()">{{ profile().status }}</span>
       </div>
@@ -24,6 +26,15 @@
   @if (loading()) {
     <div class="loading-state">Loading profile…</div>
   } @else {
+    @if (setupMode()) {
+      <div class="setup-banner">
+        <div>
+          <h2 class="setup-title">Finish your restaurant setup</h2>
+          <p class="setup-copy">Create your restaurant profile first. After saving it once, the Menu page will let you add categories and products.</p>
+        </div>
+      </div>
+    }
+
     <div class="profile-grid">
 
       <!-- Profile Information Panel -->
@@ -31,12 +42,12 @@
         <div class="panel-header">
           <h2 class="panel-title">Restaurant Information</h2>
           @if (!isEditing()) {
-            <button type="button" class="btn btn-edit" (click)="startEdit()">Edit</button>
+            <button type="button" class="btn btn-edit" (click)="startEdit()">{{ setupMode() ? 'Complete Setup' : 'Edit' }}</button>
           } @else {
             <div class="panel-actions">
-              <button type="button" class="btn btn-cancel" (click)="cancelEdit()">Cancel</button>
+              <button type="button" class="btn btn-cancel" (click)="cancelEdit()" [disabled]="setupMode()">Cancel</button>
               <button type="button" class="btn btn-save" (click)="save()" [disabled]="saving()">
-                {{ saving() ? 'Saving…' : 'Save Changes' }}
+                {{ saving() ? 'Saving…' : setupMode() ? 'Create Restaurant' : 'Save Changes' }}
               </button>
             </div>
           }
@@ -59,11 +70,11 @@
             </div>
             <div class="info-row">
               <span class="info-label">Opening Time</span>
-              <span class="info-value">{{ formatTime(profile().openingTime) }}</span>
+              <span class="info-value">{{ setupMode() ? 'Set after creation' : formatTime(profile().openingTime) }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Closing Time</span>
-              <span class="info-value">{{ formatTime(profile().closingTime) }}</span>
+              <span class="info-value">{{ setupMode() ? 'Set after creation' : formatTime(profile().closingTime) }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Min Order Amount</span>
@@ -131,14 +142,16 @@
 
         </div>
 
-        <p class="status-hint">Set your current restaurant availability for incoming orders.</p>
+        <p class="status-hint">
+          {{ setupMode() ? 'Status controls unlock after the restaurant profile is created.' : 'Set your current restaurant availability for incoming orders.' }}
+        </p>
 
         <div class="status-buttons">
           <button
             type="button"
             class="status-btn status-open"
             [class.active]="profile().status === 'Open'"
-            [disabled]="statusUpdating()"
+            [disabled]="statusUpdating() || setupMode()"
             (click)="setStatus('Open')">
             Open
           </button>
@@ -146,7 +159,7 @@
             type="button"
             class="status-btn status-busy"
             [class.active]="profile().status === 'Busy'"
-            [disabled]="statusUpdating()"
+            [disabled]="statusUpdating() || setupMode()"
             (click)="setStatus('Busy')">
             Busy
           </button>
@@ -154,11 +167,15 @@
             type="button"
             class="status-btn status-closed"
             [class.active]="profile().status === 'Closed'"
-            [disabled]="statusUpdating()"
+            [disabled]="statusUpdating() || setupMode()"
             (click)="setStatus('Closed')">
             Closed
           </button>
         </div>
+
+        @if (!setupMode()) {
+          <button type="button" class="btn btn-edit btn-menu-link" (click)="goToMenuSetup()">Open Menu Management</button>
+        }
       </article>
 
     </div>
