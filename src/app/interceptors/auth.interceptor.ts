@@ -6,7 +6,7 @@ import {
   HttpInterceptorFn,
   HttpErrorResponse
 } from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
 import { catchError, switchMap, filter, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 
@@ -34,7 +34,8 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !isPublicAuthRequest) {
+      // Handle 401 Unauthorized
+      if (error.status === 401 && !req.url.includes('/auth/login') && !req.url.includes('/auth/refresh-token')) {
         return handle401Error(req, next, authService);
       }
       return throwError(() => error);
@@ -58,10 +59,13 @@ function handle401Error(
     refreshTokenSubject.next(null);
 
     const refreshToken = authService.getRefreshToken();
+
+    // If no refresh token, clear session and redirect (no throw)
     if (!refreshToken) {
       isRefreshing = false;
       authService.clearSession();
-      return throwError(() => new Error('No refresh token'));
+      // Return a 401-like error that doesn't "crash" the component but stops the request
+      return throwError(() => new Error('Authentication required.'));
     }
 
     return authService.refreshToken(refreshToken).pipe(
@@ -79,6 +83,7 @@ function handle401Error(
     );
   }
 
+  // If already refreshing, wait for the new token
   return refreshTokenSubject.pipe(
     filter(token => token !== null),
     take(1),

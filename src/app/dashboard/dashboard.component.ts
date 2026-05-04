@@ -79,9 +79,12 @@ export class DashboardComponent {
 
   private readonly viewModel = toSignal(
     combineLatest({
-      orders: this.ordersService.getRestaurantOrders(undefined, 0, 100).pipe(
+      orders: this.ordersService.getRestaurantOrders(undefined, 0, 20).pipe(
         map(response => response.content ?? []),
-        catchError(() => of([] as OrderResponse[]))
+        catchError((err) => {
+          console.error('Dashboard: Failed to load orders', err);
+          return of([] as OrderResponse[]);
+        })
       ),
       menu: this.menuService.getRestaurants().pipe(
         switchMap(restaurants => {

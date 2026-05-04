@@ -32,32 +32,37 @@ export class AuthService {
 
   getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (!token || token === 'undefined' || token === 'null') return null;
-    return token;
+    return localStorage.getItem(ACCESS_TOKEN_KEY) || sessionStorage.getItem(ACCESS_TOKEN_KEY);
   }
 
   getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
-    const token = localStorage.getItem(REFRESH_TOKEN_KEY);
-    if (!token || token === 'undefined' || token === 'null') return null;
-    return token;
+    return localStorage.getItem(REFRESH_TOKEN_KEY) || sessionStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
-  storeTokens(tokens: AuthTokens): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
-      if (tokens.refresh_token) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
-      }
+  storeTokens(tokens: AuthTokens, rememberMe: boolean = false): void {
+    if (typeof window === 'undefined') return;
+    
+    // Clear existing tokens from both to prevent conflicts
+    this.clearSessionOnly();
+    
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
+    if (tokens.refresh_token) {
+      storage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
     }
+  }
+
+  private clearSessionOnly(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
   clearSession(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
-    }
+    this.clearSessionOnly();
     this.router.navigate(['/login']);
   }
 
@@ -67,9 +72,9 @@ export class AuthService {
 
   // -- Auth endpoints -------------------------------------------------------
 
-  login(credentials: LoginRequest): Observable<AuthTokens> {
+  login(credentials: LoginRequest, rememberMe: boolean = false): Observable<AuthTokens> {
     return this.http.post<AuthTokens>(`${this.base}/login`, credentials).pipe(
-      tap(tokens => this.storeTokens(tokens))
+      tap(tokens => this.storeTokens(tokens, rememberMe))
     );
   }
 
@@ -96,8 +101,8 @@ export class AuthService {
     return this.http.post<void>(`${this.base}/forgot-password`, data);
   }
 
-  resetPassword(data: ResetPasswordRequest): Observable<void> {
-    return this.http.post<void>(`${this.base}/reset-password`, data);
+  resetPassword(data: ResetPasswordRequest): Observable<string> {
+    return this.http.post<string>(`${this.base}/reset-password`, data);
   }
 
   verifyToken(data: VerifyTokenRequest): Observable<{ valid: boolean }> {

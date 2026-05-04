@@ -34,7 +34,7 @@ export class LoginComponent {
   }
 
   login(): void {
-    this.auth.login({ email: this.email, password: this.password }).subscribe({
+    this.auth.login({ email: this.email, password: this.password }, this.rememberMe).subscribe({
       next: () => {
         if (typeof window !== 'undefined') {
           if (this.rememberMe) {
@@ -46,12 +46,12 @@ export class LoginComponent {
 
         this.router.navigate(['/dashboard']);
       },
-     error: (error: any) => {
-  console.error('Login error full:', error);
-  console.error('Status:', error.status);
-  console.error('Response:', error.error);
-  alert('Login failed. Check console.');
-}
+      error: (error: any) => {
+        console.error('Login error full:', error);
+        console.error('Status:', error.status);
+        console.error('Response:', error.error);
+        alert('Login failed. Check console.');
+      }
     });
   }
 }

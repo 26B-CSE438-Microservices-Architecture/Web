@@ -64,11 +64,13 @@ export class OrdersService {
     size = 20
   ): Observable<PageResponse<OrderResponse>> {
     let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+      .set('page', page.toString())
+      .set('size', size.toString());
+      
     if (status) {
       params = params.set('status', status);
     }
+
     return this.http
       .get<OrderResponse[] | PageResponse<OrderResponse>>(`${this.base}/my`, { params })
       .pipe(
