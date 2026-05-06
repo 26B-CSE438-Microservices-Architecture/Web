@@ -55,7 +55,8 @@ export class RegisterComponent {
       surname: this.surname.trim(),
       email: this.email.trim(),
       phone_number: this.phone_number.trim(),
-      password: this.password
+      password: this.password,
+      role: 'restaurant_owner'
     }).subscribe({
       next: () => {
         this.isLoading = false;

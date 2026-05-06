@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: '/cse-438/api/v1',
+  apiBaseUrl: 'https://gw.cse.akdeniz.edu.tr/cse-438/api/v1',
   defaultVendorId: '',
   defaultVendorName: 'Pizza Express'
 };
