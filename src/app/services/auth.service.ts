@@ -44,6 +44,17 @@ export class AuthService {
     return token;
   }
 
+  refreshSession(): Observable<AuthTokens> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token');
+    }
+
+    return this.refreshToken(refreshToken).pipe(
+      tap(tokens => this.storeTokens(tokens))
+    );
+  }
+
   storeTokens(tokens: AuthTokens): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);

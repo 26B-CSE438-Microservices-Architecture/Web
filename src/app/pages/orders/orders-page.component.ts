@@ -8,10 +8,14 @@ import {
   signal
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, switchMap } from 'rxjs';
 
 import { OrdersService } from '../../services/orders.service';
+import { AuthService } from '../../services/auth.service';
+import { OwnerService } from '../../services/owner.service';
 import {
   OrderResponse,
   OrderStatus,
@@ -29,9 +33,12 @@ import {
 })
 export class OrdersPageComponent {
   private readonly ordersService = inject(OrdersService);
+  private readonly authService = inject(AuthService);
+  private readonly ownerService = inject(OwnerService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private hasRetriedForbidden = false;
 
   readonly orders = signal<OrderResponse[]>([]);
   readonly loading = signal(false);
@@ -77,7 +84,29 @@ export class OrdersPageComponent {
       return;
     }
 
-    this.loadOrders();
+    this.initializeOrders();
+  }
+
+  private initializeOrders(): void {
+    this.ownerService
+      .getCurrentOwner()
+      .pipe(
+        switchMap((owner) => {
+          if (!owner.restaurantId || !this.authService.getRefreshToken()) {
+            return EMPTY;
+          }
+
+          return this.authService.refreshSession().pipe(
+            catchError(() => EMPTY)
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        complete: () => {
+          this.loadOrders();
+        }
+      });
   }
 
   loadOrders(): void {
@@ -95,8 +124,13 @@ export class OrdersPageComponent {
           this.totalElements.set(response.totalElements);
         },
         error: (error: unknown) => {
+          if (this.tryRecoverFromForbidden(error)) {
+            return;
+          }
+
           this.errorMessage.set(this.extractErrorMessage(error));
           this.orders.set([]);
+          this.loading.set(false);
         },
         complete: () => {
           this.loading.set(false);
@@ -309,5 +343,32 @@ export class OrdersPageComponent {
     if (error.error?.message) return error.error.message;
     if (error.message) return error.message;
     return 'An error occurred. Please try again.';
+  }
+
+  private tryRecoverFromForbidden(error: unknown): boolean {
+    if (!(error instanceof HttpErrorResponse) || error.status !== 403) {
+      return false;
+    }
+
+    if (this.hasRetriedForbidden || !this.authService.getRefreshToken()) {
+      return false;
+    }
+
+    this.hasRetriedForbidden = true;
+    this.authService
+      .refreshSession()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loadOrders();
+        },
+        error: () => {
+          this.loading.set(false);
+          this.errorMessage.set(this.extractErrorMessage(error));
+          this.orders.set([]);
+        }
+      });
+
+    return true;
   }
 }

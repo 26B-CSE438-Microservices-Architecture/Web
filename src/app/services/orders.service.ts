@@ -33,6 +33,7 @@ export type {
 export class OrdersService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBaseUrl}/orders`;
+  private readonly restaurantBase = `${this.base}/restaurant`;
 
   // ── Customer-facing ──────────────────────────────────────────────────────
 
@@ -64,13 +65,11 @@ export class OrdersService {
     size = 20
   ): Observable<PageResponse<OrderResponse>> {
     let params = new HttpParams()
+      .set('status', status ?? '')
       .set('page', page)
       .set('size', size);
-    if (status) {
-      params = params.set('status', status);
-    }
     return this.http
-      .get<OrderResponse[] | PageResponse<OrderResponse>>(`${this.base}/my`, { params })
+      .get<OrderResponse[] | PageResponse<OrderResponse>>(this.restaurantBase, { params })
       .pipe(
         map(res => {
           if (Array.isArray(res)) {
@@ -90,14 +89,14 @@ export class OrdersService {
   }
 
   confirmOrder(orderId: string, request?: ConfirmOrderRequest): Observable<void> {
-    return this.http.post<void>(`${this.base}/${orderId}/confirm`, request ?? {});
+    return this.http.patch<void>(`${this.restaurantBase}/${orderId}/confirm`, request ?? {});
   }
 
   rejectOrder(orderId: string, request: RejectOrderRequest): Observable<void> {
-    return this.http.post<void>(`${this.base}/${orderId}/cancel`, request);
+    return this.http.patch<void>(`${this.restaurantBase}/${orderId}/reject`, request);
   }
 
   updateOrderStatus(orderId: string, request: UpdateOrderStatusRequest): Observable<void> {
-    return this.http.patch<void>(`${this.base}/${orderId}/status`, request);
+    return this.http.patch<void>(`${this.restaurantBase}/${orderId}/status`, request);
   }
 }

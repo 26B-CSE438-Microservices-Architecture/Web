@@ -3,8 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { CurrencyPipe, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { of, switchMap } from 'rxjs';
 
 import { OwnerService } from '../../services/owner.service';
+import { AuthService } from '../../services/auth.service';
 import { OwnerInfo, RestaurantProfile, UpdateRestaurantProfileDto } from '../../models/owner.models';
 import { environment } from '../../../environments/environment';
 
@@ -26,6 +28,7 @@ export class RestaurantProfileComponent implements OnInit {
   private readonly ngZone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
 
   readonly profile = signal<RestaurantProfile>(this.emptyProfile());
   editDraft: UpdateRestaurantProfileDto = this.emptyDraft();
@@ -160,11 +163,25 @@ export class RestaurantProfileComponent implements OnInit {
     }
 
     this.saving.set(true);
+    const shouldRefreshSession = this.setupMode();
     const request$ = this.setupMode()
       ? this.ownerService.createRestaurantProfile(this.editDraft)
       : this.ownerService.updateRestaurantProfile(this.profile().id, this.editDraft);
 
-    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    request$
+      .pipe(
+        switchMap((updated) => {
+          if (!shouldRefreshSession || !this.authService.getRefreshToken()) {
+            return of(updated);
+          }
+
+          return this.authService.refreshSession().pipe(
+            switchMap(() => of(updated))
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
       next: (updated) => {
         this.ngZone.run(() => {
           const wasSetupMode = this.setupMode();

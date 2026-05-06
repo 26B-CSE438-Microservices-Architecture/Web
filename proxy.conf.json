@@ -1,6 +1,6 @@
 {
   "/cse-438": {
-    "target": "http://gateway:8080",
+    "target": "https://gw.cse.akdeniz.edu.tr",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

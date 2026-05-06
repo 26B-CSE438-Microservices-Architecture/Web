@@ -39,6 +39,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/cse-438/",
               "budgets": [
                 {
                   "type": "initial",
