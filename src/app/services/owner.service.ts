@@ -252,16 +252,14 @@ export class OwnerService {
   private resolveRestaurantContext(userResponse?: unknown): Observable<{ id?: string; name: string }> {
     const userLinkedRestaurant = this.extractRestaurantContextFromUser(userResponse);
     if (userLinkedRestaurant.id) {
+      // Backend bu kullanıcının restoranını onayladı → kaydet ve kullan
       this.storeRestaurantContext(userLinkedRestaurant.id, userLinkedRestaurant.name);
       return of(userLinkedRestaurant);
     }
 
-    const savedId = this.readBrowserStorage(this.restaurantIdStorageKey);
-    const savedName = this.readBrowserStorage(this.restaurantNameStorageKey);
-
-    if (savedId) {
-      return of({ id: savedId, name: savedName });
-    }
+    // Backend bu kullanıcı için restoran döndürmedi.
+    // Önceki kullanıcıdan kalan stale localStorage verisini temizle.
+    this.clearRestaurantContext();
 
     if (environment.defaultVendorId) {
       return of({ id: environment.defaultVendorId, name: environment.defaultVendorName ?? '' });
@@ -373,6 +371,13 @@ export class OwnerService {
   private storeRestaurantContext(id: string, name: string): void {
     this.writeBrowserStorage(this.restaurantIdStorageKey, id);
     this.writeBrowserStorage(this.restaurantNameStorageKey, name);
+  }
+
+  private clearRestaurantContext(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(this.restaurantIdStorageKey);
+      localStorage.removeItem(this.restaurantNameStorageKey);
+    }
   }
 
   private extractRestaurantIdFromCreateResponse(response: HttpResponse<unknown>): string {

@@ -83,8 +83,9 @@ export class RestaurantProfileComponent implements OnInit {
             this.owner.set(owner);
           });
 
-          const savedId = localStorage.getItem('menu_restaurant_id');
-          const restaurantId = savedId || owner.restaurantId || environment.defaultVendorId || '';
+          // Her zaman token'dan gelen (sunucu kaynaklı) restaurantId'yi öncelikli kullan.
+          // localStorage yalnızca backend hiçbir şey döndürmediğinde fallback olarak devreye girer.
+          const restaurantId = owner.restaurantId || localStorage.getItem('menu_restaurant_id') || environment.defaultVendorId || '';
 
           if (!restaurantId) {
             this.ngZone.run(() => {

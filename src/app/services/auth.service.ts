@@ -19,6 +19,8 @@ import {
 
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
+const RESTAURANT_ID_KEY = 'menu_restaurant_id';
+const RESTAURANT_NAME_KEY = 'menu_restaurant_name';
 
 @Injectable({
   providedIn: 'root'
@@ -68,6 +70,9 @@ export class AuthService {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
+      // Önceki kullanıcıdan kalan restoran context'ini temizle
+      localStorage.removeItem(RESTAURANT_ID_KEY);
+      localStorage.removeItem(RESTAURANT_NAME_KEY);
     }
     this.router.navigate(['/login']);
   }
