@@ -99,7 +99,7 @@
     </div>
   } @else {
     <div class="orders-list">
-      @for (order of filteredOrders(); track order.orderId) {
+      @for (order of activeOrders(); track order.orderId) {
         <article class="panel order-card">
           <header class="order-header">
             <div class="order-info">
@@ -367,6 +367,122 @@
         </article>
       }
     </div>
+
+    @if (expiredOrders().length > 0) {
+      <div class="expired-section-header">
+        <h2 class="expired-section-title">Expired Orders</h2>
+        <span class="expired-section-count">{{ expiredOrders().length }}</span>
+      </div>
+      <div class="orders-list expired-orders-list">
+        @for (order of expiredOrders(); track order.orderId) {
+          <article class="panel order-card order-card-expired">
+            <header class="order-header">
+              <div class="order-info">
+                <h3 class="order-id">Order #{{ order.orderId }}</h3>
+                <p class="order-meta">
+                  <span class="meta-item">
+                    <strong>Created:</strong> {{ formatDate(order.createdAt) }}
+                  </span>
+                  <span class="meta-item">
+                    <strong>Type:</strong> {{ order.orderType }}
+                  </span>
+                </p>
+              </div>
+              <div class="order-status-and-actions">
+                <div class="status-container">
+                  <span [ngClass]="getStatusBadgeClass(order.status)">
+                    {{ getStatusLabel(order.status) }}
+                  </span>
+                </div>
+                <div class="action-row">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    (click)="showOrderDetails(order.orderId)">
+                    {{ showingDetails() === order.orderId ? 'Hide Details' : 'View Details' }}
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div class="order-summary">
+              <div class="summary-item">
+                <span class="summary-label">Total Amount</span>
+                <span class="summary-value">{{ order.totalAmount.amount | currency: order.totalAmount.currency }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Payment</span>
+                <span class="payment-badge" [class]="'payment-' + order.paymentStatus.toLowerCase()">
+                  {{ order.paymentStatus }}
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Items</span>
+                <span class="summary-value">{{ order.items.length }}</span>
+              </div>
+            </div>
+
+            @if (showingDetails() === order.orderId) {
+              <div class="order-details">
+                <div class="details-section">
+                  <h4 class="section-title">Order Items</h4>
+                  <div class="table-wrapper" role="region">
+                    <table class="items-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Product</th>
+                          <th scope="col">Qty</th>
+                          <th scope="col">Unit Price</th>
+                          <th scope="col">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of order.items; track item.id) {
+                          <tr>
+                            <td>
+                              <div class="item-name">{{ item.productName }}</div>
+                              @if (item.specialInstructions) {
+                                <div class="item-instructions">{{ item.specialInstructions }}</div>
+                              }
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.unitPrice.amount | currency: item.unitPrice.currency }}</td>
+                            <td>{{ item.subtotal.amount | currency: item.subtotal.currency }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="details-section">
+                  <h4 class="section-title">Status Timeline</h4>
+                  <div class="timeline">
+                    @for (history of order.statusHistory; track history.id; let isLast = $last) {
+                      <div class="timeline-item" [class.timeline-item-last]="isLast">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                          <div class="timeline-status">
+                            <span class="status-label">{{ getStatusLabel(history.status) }}</span>
+                            <span class="timeline-time">{{ formatTime(history.changedAt) }}</span>
+                          </div>
+                          <div class="timeline-meta">
+                            <span class="meta-by">Changed by: {{ history.changedBy }}</span>
+                            @if (history.reason) {
+                              <span class="meta-reason">Reason: {{ history.reason }}</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
 
     <!-- Pagination -->
     <div class="panel pagination-panel">

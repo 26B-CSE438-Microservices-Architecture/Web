@@ -64,9 +64,15 @@ export class OrdersPageComponent {
     'DELIVERED'
   ];
 
-  readonly filteredOrders = computed(() => {
-    return this.orders();
+  readonly activeOrders = computed(() => {
+    return this.orders().filter(o => o.status !== 'EXPIRED');
   });
+
+  readonly expiredOrders = computed(() => {
+    return this.orders().filter(o => o.status === 'EXPIRED');
+  });
+
+  readonly filteredOrders = this.activeOrders;
 
   readonly rejectForm = this.fb.nonNullable.group({
     reason: ['', [Validators.required, Validators.maxLength(500)]]

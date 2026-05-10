@@ -205,6 +205,44 @@
   gap: var(--spacing-lg);
 }
 
+.expired-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0 var(--spacing-xs);
+  border-bottom: 2px solid rgba(220, 38, 38, 0.25);
+}
+
+.expired-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #b91c1c;
+  letter-spacing: -0.01em;
+}
+
+.expired-section-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.12);
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.expired-orders-list {
+  opacity: 0.85;
+}
+
+.order-card-expired {
+  border-left: 3px solid rgba(220, 38, 38, 0.45);
+}
+
+.order-card-expired:hover {
+  border-color: rgba(220, 38, 38, 0.55);
+}
+
 .order-card {
   padding: var(--spacing-lg);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
