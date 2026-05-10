@@ -58,8 +58,6 @@ export class OrdersPageComponent {
   readonly showingStatusForm = signal<string | null>(null);
 
   readonly availableStatuses: OrderStatus[] = [
-    'PAYMENT_HELD',
-    'CONFIRMED_BY_RESTAURANT',
     'PREPARING',
     'READY_FOR_PICKUP',
     'ON_THE_WAY',
@@ -245,10 +243,7 @@ export class OrdersPageComponent {
   startChangeStatus(orderId: string): void {
     this.showingStatusForm.set(orderId);
     this.showingRejectForm.set(null);
-    const order = this.orders().find(o => o.orderId === orderId);
-    if (order) {
-      this.statusForm.patchValue({ status: order.status });
-    }
+    this.statusForm.patchValue({ status: 'PREPARING' });
   }
 
   updateOrderStatus(orderId: string): void {
