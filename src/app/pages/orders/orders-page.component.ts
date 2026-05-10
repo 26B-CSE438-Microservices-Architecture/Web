@@ -57,13 +57,35 @@ export class OrdersPageComponent {
   readonly showingRejectForm = signal<string | null>(null);
   readonly showingStatusForm = signal<string | null>(null);
 
-  readonly availableStatuses: OrderStatus[] = [
+  readonly filterStatuses: OrderStatus[] = [
+    'PAYMENT_PENDING',
+    'PAYMENT_HELD',
+    'CONFIRMED_BY_RESTAURANT',
+    'PAID',
     'PREPARING',
     'READY_FOR_PICKUP',
     'ON_THE_WAY',
     'DELIVERED',
+    'CANCELLED',
     'EXPIRED'
   ];
+
+  private static readonly RESTAURANT_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
+    'PAYMENT_PENDING':        ['PAYMENT_HELD', 'PAYMENT_FAILED', 'EXPIRED', 'CANCELLED'],
+    // PAYMENT_HELD → CONFIRMED/REJECTED handled by dedicated Confirm/Reject buttons
+    'CONFIRMED_BY_RESTAURANT': ['PAYMENT_CAPTURE_PENDING', 'CANCELLED'],
+    'PAYMENT_CAPTURE_PENDING': ['PAID', 'PAYMENT_FAILED'],
+    'PAID':                   ['PREPARING', 'CANCELLED'],
+    'PREPARING':              ['READY_FOR_PICKUP', 'CANCELLED'],
+    'READY_FOR_PICKUP':       ['ON_THE_WAY'],
+    'ON_THE_WAY':             ['DELIVERED'],
+    'CANCELLED':              ['REFUND_REQUESTED'],
+    'REFUND_REQUESTED':       ['REFUNDED'],
+  };
+
+  getAvailableStatuses(currentStatus: OrderStatus): OrderStatus[] {
+    return OrdersPageComponent.RESTAURANT_TRANSITIONS[currentStatus] ?? [];
+  }
 
   readonly filteredOrders = computed(() => {
     return this.orders();
@@ -241,10 +263,11 @@ export class OrdersPageComponent {
       });
   }
 
-  startChangeStatus(orderId: string): void {
+  startChangeStatus(orderId: string, currentStatus: OrderStatus): void {
+    const available = this.getAvailableStatuses(currentStatus);
     this.showingStatusForm.set(orderId);
     this.showingRejectForm.set(null);
-    this.statusForm.patchValue({ status: 'PREPARING' });
+    this.statusForm.patchValue({ status: available[0] ?? 'PREPARING' });
   }
 
   updateOrderStatus(orderId: string): void {

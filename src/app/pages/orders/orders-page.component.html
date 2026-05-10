@@ -75,7 +75,7 @@
         (click)="filterByStatus(null)">
         All Orders ({{ totalElements() }})
       </button>
-      @for (status of availableStatuses; track status) {
+      @for (status of filterStatuses; track status) {
         <button
           type="button"
           class="filter-btn"
@@ -253,15 +253,17 @@
               <div class="edit-actions">
                 <!-- Status Update Form -->
                 @if (!showingStatusForm() || showingStatusForm() !== order.orderId) {
+                  @if (getAvailableStatuses(order.status).length > 0) {
                   <div class="action-group">
                     <button
                       type="button"
                       class="btn btn-info"
-                      (click)="startChangeStatus(order.orderId)"
+                      (click)="startChangeStatus(order.orderId, order.status)"
                       [disabled]="submitting()">
                       Change Status
                     </button>
                   </div>
+                  }
                 }
 
                 <!-- Confirm Button (only for PAYMENT_HELD status) -->
@@ -309,7 +311,7 @@
                   <label class="field-group narrow">
                     <span class="field-label">New Status</span>
                     <select class="field-input" formControlName="status">
-                      @for (status of availableStatuses; track status) {
+                      @for (status of getAvailableStatuses(order.status); track status) {
                         <option [value]="status">{{ getStatusLabel(status) }}</option>
                       }
                     </select>
